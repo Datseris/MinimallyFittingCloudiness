@@ -1,6 +1,16 @@
 name = "MinimallyFittingCloudiness"
-[compat]
-julia = "1.7.0"
-DrWatson = "2.9.1"
+
 [deps]
+ClimateBase = "35604d93-0fb8-4872-9436-495b01d137e2"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DrWatson = "634d3b9d-ee7a-5ddf-bec9-22491ea816e1"
+GLM = "38e38edf-8417-5370-95a0-9cbb8c7f171a"
+Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
+NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+
+[compat]
+DrWatson = "2.9.1"
+julia = "1.7.0"

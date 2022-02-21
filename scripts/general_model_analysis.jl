@@ -4,43 +4,15 @@ and then performs some standardized analysis like identifying minima, etc.
 =#
 using DrWatson
 @quickactivate "AlbedoBounds"
-include(scriptsdir("predictors", "cloudiness_predictors_definition.jl"));
+include(scriptsdir("fields_definition.jl"));
 using DataFrames
-Between = ClimateBase.Between
 
-# These functions are taken from the `general_model_fit.jl` script
-function eval_model_equations(model_expression, N)
-    parsed_expression = Meta.parse(model_expression)
-    _vars_expand = [Symbol("x", "$i") for i in 1:N]
-    eval(:(model(p, $(_vars_expand...), args...) = @. $(parsed_expression)))
-end
-function timezonalmean(F, OCEAN_MASK, MAXDEG)
-    to_non_nan_lats(
-        timemean(
-            zonalmean(F[Coord(Lat((-MAXDEG)..(MAXDEG)))], OCEAN_MASK[Coord(Lat((-MAXDEG)..(MAXDEG)))])
-        )
-    )
-end
-function normfield(x)
-    mi, ma = extrema((timemean(x)))
-    return (x .- mi) ./ (ma - mi)
-end
-
-# and we also need the dictionary of predictors to be defined
 
 # %%
 F_name = :CRElw
 filename = datadir("modelfits", "general", "$(F_name)_all_fits.jld2")
 df = wload(filename)["df"]
 F = field_dictionary[F_name]
-
-# Case 1: find best combination of full fit
-
-# Case 2: find best combination of timezonal fit
-
-# Case 3: find best combination of timeseries fit
-
-# Plot the best model fits
 column_to_use = :timezonal_fit_error
 df2 = sort(df, column_to_use)
 
@@ -60,5 +32,5 @@ for i in 1:3
     gca().set_title(
         string(row.predictors)*"\n"*string(row.expression)
     )
-    tight_layout();     legend();
+    tight_layout(); legend();
 end

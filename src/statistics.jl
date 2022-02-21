@@ -1,5 +1,5 @@
-using Statistics, Dates, Entropies, StatsBase, Random
-export linreg, regularize, findnearest
+using Statistics, Dates, StatsBase, Random
+export linreg, regularize, nrmse
 
 """
     linreg(x, y) -> s, o, fit, x

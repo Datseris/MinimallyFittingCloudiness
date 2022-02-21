@@ -8,7 +8,8 @@ include(scriptsdir("predictors", "fields_definition.jl"));
 ###################################################################### #src
 # %% #src
 # ## Predictors
-# Define the predictors as a tuple of `Symbol`s.
+# Define the predictors as a tuple of `Symbol`s, which can then access
+# the dictionary defined in the file `fields_definition.jl`
 predictors = (:Ω_nf, :ECTEI, :WS10)
 
 # ## Field to be predicted
@@ -48,7 +49,7 @@ close("all") #src
 eval_model_equations(model_expression, predictors)
 
 # This has now created a `model` function, `model(p, x1, x2, ...)` that
-# evaluates exactly the string of the `model_expression` variable.
+# evaluates exactly the string of the `model_expression` variable
 model
 
 # Zonal means weighted with the ocean fraction

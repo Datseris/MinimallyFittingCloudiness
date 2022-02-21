@@ -3,7 +3,15 @@ This file performs a multilinear regression of a given field `F`
 over given predictor fields `Ps`. The regression is done individually at each
 spatial point. It then plots the coefficients of each predictor at each 
 spatial point. The coefficients are normalized versus the average timeseries std
-of the predictor.
+of the predictors.
+
+This is inspired by Fig. 1 of:
+> Grise, K. M., & Kelleher, M. K. (2021). Midlatitude cloud radiative effect sensitivity 
+> to cloud controlling factors in observations and models: Relationship with southern 
+> hemisphere jet shifts and climate sensitivity. Journal of Climate, 34(14), 5869–5886. 
+> https://doi.org/10.1175/JCLI-D-20-0986.1
+
+but notice that here I do not fit anomalies.
 =#
 
 ###################################################################### #src
@@ -11,12 +19,12 @@ of the predictor.
 ###################################################################### #src
 using DrWatson
 @quickactivate "MinimalyFittingCloudiness"
-include(scriptsdir("predictors", "fields_definition.jl"));
+include(scriptsdir("fields_definitions.jl"));
 
 # ## Predictors
 # Use `U` as a predictor if you want to also include the intercept as fitted
 # (if not, intercept is assumed 0)
-Ps = (Ω_mean, EIS)
+Ps = (Ω_mean, EIS, U)
 
 # ## Field to be predicted
 F = C

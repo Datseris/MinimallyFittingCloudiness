@@ -1,5 +1,5 @@
 using DrWatson
-@quickactivate "AlbedoBounds"
+@quickactivate "MinimalyFittingCloudiness"
 
 using ClimateBase
 include(srcdir("cloudiness.jl"))

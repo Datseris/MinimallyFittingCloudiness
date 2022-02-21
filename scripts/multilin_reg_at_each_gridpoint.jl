@@ -10,29 +10,30 @@ of the predictor.
 # # Inputs/definitions of predictors
 ###################################################################### #src
 using DrWatson
-@quickactivate "AlbedoBounds"
-include(scriptsdir("predictors", "cloudiness_predictors_definition.jl"));
+@quickactivate "MinimalyFittingCloudiness"
+include(scriptsdir("predictors", "fields_definition.jl"));
 
-# %% #src
 # ## Predictors
+# Use `U` as a predictor if you want to also include the intercept as fitted
+# (if not, intercept is assumed 0)
 Ps = (Ω_mean, EIS)
 
 # ## Field to be predicted
 F = C
-# F = CREsw
-# F = CRElw
 
+# ## Other parameters
 MAXDEG = 70 # fit only within ± MAXDEG
 ocean_mask_perc = 50 # points with % ≥ than this are considered "ocean"
 
 ###################################################################### #src
 # # Linear fit code
+# (no reason to touch anything here)
 ###################################################################### #src
+# %% #src
 OCEAN_MASK_MEAN = timemean(O) .> ocean_mask_perc
 
 import GLM
 
-# function linear_regression_versus_time(F::ClimArray, Ps::Tuple)
 # Prepare output array
 coord = dims(F, Coord)
 pnames = [String(P.name) for P in Ps]
@@ -46,8 +47,6 @@ output = ClimArray(fill(NaN, length(coord), length(coefs)), (coord, coefs); attr
 
 # Calculate std of predictors for coefficient normalization
 stds = [spacemean(timeagg(std, P)) for P in Ps]
-# stds[1] = 1
-
 xdata = zeros(size(F, Time), length(Ps))
 ydata = zeros(size(F, Time))
 
@@ -61,8 +60,8 @@ for (cj, c) in enumerate(coord)
     ydata .= F[Coord(cj)]
     out = GLM.lm(xdata, ydata)
     output[(Coord(cj))] .= GLM.coef(out)
-    # if i want confidence intervals:
-    # ci05, ci95 = GLM.confint(out)[i, :] for the i-th predictor
+    ## if i want confidence intervals:
+    ## ci05, ci95 = GLM.confint(out)[i, :] for the i-th predictor
 end
 
 # Okay let's plot first coefficient

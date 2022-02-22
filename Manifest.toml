@@ -74,7 +74,7 @@ version = "0.1.2"
 
 [[deps.ClimateBase]]
 deps = ["Dates", "DimensionalData", "Interpolations", "NCDatasets", "Requires", "SignalDecomposition", "StaticArrays", "Statistics", "StatsBase"]
-git-tree-sha1 = "6d110c62e13eb48b7e8d4e8974c359620ebbe0e5"
+path = "C:\\Users\\m300808\\.julia\\dev\\ClimateBase"
 uuid = "35604d93-0fb8-4872-9436-495b01d137e2"
 version = "0.14.3"
 

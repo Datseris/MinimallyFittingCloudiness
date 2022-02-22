@@ -3,7 +3,7 @@ This script loads the central dataframe(s) generated with `general_model_fit.jl`
 and then performs some standardized analysis like identifying minima, etc.
 =#
 using DrWatson
-@quickactivate "AlbedoBounds"
+@quickactivate ""
 include(scriptsdir("fields_definition.jl"));
 using DataFrames
 

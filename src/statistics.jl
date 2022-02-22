@@ -67,7 +67,8 @@ end
 
 using StatsBase
 # Oh damn, `monthlyagg(Ω, skewness)` does not work, both because DimData.jl doesn't extend
-# it, but also because StatsBase.jl doesn't have a `dims` method for it
+# it, but also because StatsBase.jl doesn't have a `dims` method for it.
+# So I wrote this custom function instead
 function monthlyagg_custom(A, f=skewness; mday = 15)
     t0 = dims(A, Time).val
     startdate = Date(year(t0[1]), month(t0[1]), mday)

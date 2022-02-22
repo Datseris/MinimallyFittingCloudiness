@@ -10,10 +10,10 @@ include(scriptsdir("predictors", "fields_definition.jl"));
 # ## Predictors
 # Define the predictors as a tuple of `Symbol`s, which can then access
 # the dictionary defined in the file `fields_definition.jl`
-predictors = (:Ω_nf, :ECTEI, :WS10)
+predictors = (:Ω_nf, :ECTEI)
 
 # ## Field to be predicted
-# Here you can use any of `C, CREsw, CRElw, CF`, or whatever else.
+# Here you can use any of `C, CREsw, L, F`, or whatever else.
 Φ = C
 
 # ## Model definition
@@ -21,7 +21,7 @@ predictors = (:Ω_nf, :ECTEI, :WS10)
 # we'll use Julia's metaprogramming to actually make it a runnable function.
 # Predictors are always expressed as `x1, x2, ...`, and the order corresponds
 # to the order of the `predictors` variable.
-model_expression = "p[1]*x1 + p[2]*x2*(1-x1) + p[3]*x3"
+model_expression = "p[1]*x1 + p[2]*x2*(1-x1)"
 
 # ## Fit constraints
 # We want to do two limitations:
@@ -32,12 +32,12 @@ MAXDEG = 80 # fit only within ± MAXDEG
 ocean_mask_perc = 50 # points with % ≥ than this are considered "ocean"
 
 ######################################################################## #src
-# # Model fit code (do not touch anything here!)
+# # Model fit code
 ######################################################################## #src
 Ps = map(p -> getindex(field_dictionary, p), predictors)
 OCEAN_MASK = O .≥ ocean_mask_perc
-include(srcdir("modelling", "general.jl"))
-include(srcdir("modelling", "masking.jl"))
+include(srcdir("fitting", "general.jl"))
+include(srcdir("fitting", "masking.jl"))
 
 close("all") #src
 
@@ -72,7 +72,7 @@ full_fit_params = p
 println("   Original NRMSE for FULL fit: ", err)
 println("   MAXDEG=$(MAXDEG), OCEAN_FRAC=$(ocean_mask_perc)")
 println("   fit parameters: ", p, '\n')
-timemean_error, mean_correlation, timeseries_errors = 
+timemean_error, mean_correlation, timeseries_errors =
     plot_total_model_comparison(Φ, Ps, model, p, OCEAN_MASK; MAXDEG)
 
 
@@ -104,7 +104,7 @@ filename = datadir("modelfits", "general", "$(Φ.name)_all_fits.jld2")
 df = isfile(filename) ? load(filename)["df"] : DataFrame(
     ## Column names of an empty dataframe to initialize
     predictors = [], expression = String[], ocean_mask_perc = Float64[],
-    maxdeg = Float64[], full_fit_error = Float64[], full_fit_params = Vector{Float64}[], 
+    maxdeg = Float64[], full_fit_error = Float64[], full_fit_params = Vector{Float64}[],
     timemean_error = Float64[], mean_correlation = Float64[], timeseries_errors = Vector{Float64}[],
     timezonal_fit_error = Float64[], timezonal_fit_params = Vector{Float64}[],
 )
@@ -125,7 +125,7 @@ if !(any(x -> isequal(Tuple(x), tocheck), Tables.namedtupleiterator(df[!, 1:4]))
 end
 
 # Subselect dataframe for presentation
-df2 = select(df, :predictors, :expression, :timezonal_fit_error, 
+df2 = select(df, :predictors, :expression, :timezonal_fit_error,
 :timeseries_errors => ByRow(median) => :seasonal_error)
 
 sort!(df2, :timezonal_fit_error)

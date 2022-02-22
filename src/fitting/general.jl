@@ -5,7 +5,7 @@ import LsqFit
 ##########################################################################################
 # Model generation
 ##########################################################################################
-eval_model_equations(model_expression, p) = eval_model_equations(model_expression, length(p)
+eval_model_equations(model_expression, p) = eval_model_equations(model_expression, length(p))
 
 function eval_model_equations(model_expression, N::Int)
     parsed_expression = Meta.parse(model_expression)

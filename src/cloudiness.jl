@@ -3,26 +3,22 @@
 using ClimateBase
 
 "According to paper by Datseris & Stevens."
-function effective_cloud_albedo(;
-        EBAF_TOA = datadir("CERES", "EBAF_TOA.nc"),
-        EBAF_SFC = datadir("CERES", "EBAF_SFC.nc"),
-        eqarea = false,
-    )
+function effective_cloud_albedo(EBAF)
 
-    R = ncread(EBAF_TOA, "toa_sw_all_mon")
-    K = ncread(EBAF_TOA, "toa_sw_clr_c_mon")
-    I = ncread(EBAF_TOA, "solar_mon")
-    F = ncread(EBAF_TOA, "cldarea_total_daynight_mon") ./ 100
-    T = ncread(EBAF_TOA, "cldtau_total_day_mon")
+    R = ncread(EBAF, "toa_sw_all_mon")
+    K = ncread(EBAF, "toa_sw_clr_t_mon")
+    I = ncread(EBAF, "solar_mon")
+    F = ncread(EBAF, "cldarea_total_daynight_mon") ./ 100
+    T = ncread(EBAF, "cldtau_total_day_mon")
     Tcorrected = sinusoidal_continuation(T, [1, 2.0]; Tmin = 0)
     C1 = _cloud_effective_albedo(F, Tcorrected, Float32(0.9))
     C1_timeavg = timemean(C1)
 
     # use `\:arrow_down:` and tab for arrows
-    F_s_⬆ = ncread(EBAF_SFC, "sfc_sw_up_all_mon")
-    F_s_⬇ = ncread(EBAF_SFC, "sfc_sw_down_all_mon")
-    F_s_⬆_K = ncread(EBAF_SFC, "sfc_sw_up_clr_c_mon")
-    F_s_⬇_K = ncread(EBAF_SFC, "sfc_sw_down_clr_c_mon");
+    F_s_⬆ = ncread(EBAF, "sfc_sw_up_all_mon")
+    F_s_⬇ = ncread(EBAF, "sfc_sw_down_all_mon")
+    F_s_⬆_K = ncread(EBAF, "sfc_sw_up_clr_t_mon")
+    F_s_⬇_K = ncread(EBAF, "sfc_sw_down_clr_t_mon");
 
     l = size(F_s_⬆, Time)
     argsall = timemean.((I[Time(1:l)], R[Time(1:l)], F_s_⬆, F_s_⬇))

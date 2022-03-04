@@ -12,11 +12,11 @@ GEA = 250 # Gaussian Equal Area grid spacing. 250 or 125.
 
 EBAF = datadir("exp_pro", "CERES_EBAF_gea$(GEA).nc")
 SYN1deg = datadir("exp_pro", "SYN1deg_gea$(GEA).nc")
-ERA5_Ω = datadir("exp_pro", "ERA5_W_statistics_gea$(GEA).nc")
+ERA5_Ω = datadir("exp_pro", "ERA5_W1h_statistics_gea$(GEA).nc")
 ERA5_3D = datadir("exp_pro", "ERA5_3D_gea$(GEA).nc")
 ERA5_2D = datadir("exp_pro", "ERA5_2D_gea$(GEA).nc")
 
-# CERES data provide Cloud albedo and solar zenith angle
+# CERES data provide as in Datseris and Stevens (2021)
 C = effective_cloud_albedo(EBAF)
 C = ClimArray(100C; name = "C") # Make albedo percentage units for more numeric similarity
 
@@ -31,7 +31,6 @@ CRElw = ClimArray(Lclr - Lall; name = "CRElw")
 CRE = ClimArray(CRElw - CREsw; name = "CRE")
 L = ClimArray(CRElw; name = "L")
 
-# C[Coord(5668)] .= C[Coord(5669)] # Don't know why, don't ask why :D
 I = ncread(EBAF, "solar_mon")
 Z = ClimArray(acos.(I ./ 1361); name = "zenith")
 O = ncread(SYN1deg, "aux_ocean_mon"; name = "ocean_fraction")
@@ -39,7 +38,7 @@ ICE = ncread(SYN1deg, "aux_snow_mon"; name = "ice_fraction")
 LAND = ClimArray(100 .- O .- ICE; name = "land_fraction")
 
 # Predictors based on wind speed
-Ω_mean = ClimArray(-ncread(ERA5_Ω, "W_mean"); name = "Ω_mean") # notice multiplication with -1
+Ω_mean = ClimArray(-1000ncread(ERA5_Ω, "W_mean"); name = "Ω_mean") # notice -1000 !
 Ω_std = ncread(ERA5_Ω, "W_std"; name = "Ω_std")
 Ω_nf = ncread(ERA5_Ω, "W_nf"; name = "Ω_nf")
 WS10 = ncread(ERA5_2D, "si10"; name = "wind10")
@@ -61,6 +60,15 @@ EIS = ClimArray(EIS; name = "EIS")
 q = ncread(ERA5_3D, "q"; name= "q")
 q = 1000q # multiply with 1000 to make it in units of g/kg instead of kg/kg
 q.attrib["units"] = "g/kg"
+# For some weird reason q and V have missing data, which I fix here (very few)
+for FIELD in (q, V)
+    midxs = findall(ismissing, FIELD)
+    fill_value = mean(skipmissing(FIELD.data))
+    for i in midxs
+        FIELD.data[i] = fill_value
+    end
+end
+
 q700 = ClimArray(q[Pre(At(700))]; name = "q_700hPa")
 qsfc = ClimArray(q[Pre(At(1000))]; name = "q_sfc") # <- Can be improved!!!
 ECTEI = estimated_cloud_top_entrainment_index(Tsfc, T700, qsfc/1000, q700/1000; Psfc)
@@ -83,4 +91,4 @@ field_dictionary = @dict(
     q700, qsfc, T700, Tsfc, V, EIS, ECTEI, U, L, F, LTS
 )
 
-filed_dictionary = sametimespan(field_dictionary)
+field_dictionary = sametimespan(field_dictionary; maxtime = Date(2999, 12, 30))

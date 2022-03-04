@@ -8,12 +8,13 @@ using NCDatasets, ClimateBase, StatsBase
 include(srcdir("statistics.jl"))
 Time = ClimateBase.Ti
 
-path = raw"C:\Users\m300808\Desktop\ERA5_original"
+path = desktop("ERA5_original")
 filereg = "ERA5_hourly_W"
 files = readdir(path; join=true)
 files = filter(file -> occursin(filereg, file), files)
 name = "w"
 outname = "W"
+v = 1 # selected every `v`th hour
 
 # Create new time dimension
 ds = NCDataset(files[1])
@@ -28,7 +29,7 @@ newdims = (odims..., Time(tnew))
 nf(x) = count(<(0), x)/length(x) # negative fraction
 reducing_fs = (mean, std, skewness, nf)
 fields = map(
-    f -> ClimArray(zeros(size(newdims)), newdims; name = "$(outname)_"*string(f)), 
+    f -> ClimArray(zeros(size(newdims)), newdims; name = "$(outname)_"*string(f)),
     reducing_fs
 )
 
@@ -37,7 +38,6 @@ for (j, file) in enumerate(files)
     # Because the hourly data of one full year do not fit in memory,
     # we need to load only parts of them...
     s = ncsize(file, name)
-    v = 2 # selected every `v`th hour
     Ω = ncread(file, name, (:, :, 1:v:s[3]))
 
     # Do monthly aggregation using ClimateBase
@@ -55,9 +55,9 @@ end
 @assert !any(iszero, fields[2])
 
 # Alrighty, now add them to the file
-outfile = joinpath(path, "ERA5_$(outname)_statistics.nc")
+outfile = joinpath(path, "ERA5_$(outname)$(v)h_statistics.nc")
 a = Dict(
-    "Conventions" => "CF-1.6", 
+    "Conventions" => "CF-1.6",
     "Note" => "Monthly statistics of $(name) from hourly data"
 )
 @tag!(a; storepatch = false)

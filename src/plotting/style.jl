@@ -1,7 +1,7 @@
 #=
 Style file for plotting
 =#
-using PyPlot, PyCall, DrWatson
+using PyPlot, DrWatson
 using Printf
 DrWatson._wsave(s, fig::Figure) = fig.savefig(s, dpi = 600, transparent = true)
 
@@ -216,7 +216,7 @@ function add_colorbar!(ax, lvls; c = :viridis, location = "right", name = nothin
 end
 
 
-colorsys = pyimport("colorsys")
+colorsys = PyPlot.PyCall.pyimport("colorsys")
 """
     lighten(color, amount = 0.5)
 Lighten the color by the given amount, which will darken if less than 1.0.

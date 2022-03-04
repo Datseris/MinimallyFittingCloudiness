@@ -9,8 +9,7 @@ input_fields = (C, L)
 input_predictors = ((:Ω_nf, :ECTEI), (:Ω_std, :Ω_mean, :q700))
 input_expressions = ("p[1]*x1 + p[2]*x2*(1-x1)", "p[1]*x1 + p[2]*x2 + p[3]*x3")
 fieldnames = ["\$C\$",  "\$L\$"]
-input_params = [[48.88837, 2.08326], [90.598145, 0.0592183, 2.69883]]
-input_params_tz = [[48.40335, 2.0638], [106.69178, 0.1237, 1.95407]]
+input_params = [[48.88837, 2.08326], [90.63965, 0.05912, 2.69408]]
 vmins = [0, 0]
 vmaxs = [40, 70]
 MAXDEG = 80 # fit only within ± MAXDEG
@@ -21,18 +20,6 @@ latzones = (-90, -30, 0, 30, 90)
 
 # MAIN #########################
 OCEAN_MASK = O .≥ ocean_mask_perc
-
-function correlationmap(F, M)
-    FF = copy(F); MM = copy(M)
-    FF[.!OCEAN_MASK] .= NaN
-    MM[.!OCEAN_MASK] .= NaN
-    X = timemean(MM)
-    for i in spatialidxs(X)
-        X[i] = Statistics.cor(FF[i...], MM[i...])
-    end
-    aaa = spacemean(dropnan(X))
-    return X, aaa
-end
 
 close("all")
 # Initialize figure and axis for temporal results
@@ -66,30 +53,21 @@ predictors = input_predictors[i]
 expression = input_expressions[i]
 Φname = fieldnames[i]
 params = input_params[i]
-params_tz = input_params_tz[i]
 Ps = map(P -> getindex(field_dictionary, P), predictors)
 M = get_model_instance(expression, Ps, params)
 
 # Initialize figure and axis for spatial results
 rows = 20
-offset = 2 # for latitudes
 fig = figure(figsize = (18, 5))
-axΦ = subplot2grid((rows, 3), (0, 0), rowspan=rows-1)
-axM = subplot2grid((rows, 3), (0, 1), rowspan=rows-1)
-axZ = subplot2grid((rows, 3), (0, 2), rowspan=rows-offset)
-ax_cbar = subplot2grid((rows, 3), (rows-1, 0), colspan=2)
-fig.tight_layout()
 axΦ = subplot2grid((rows, 3), (0, 0), rowspan=rows-1, projection=PROJ)
 axM = subplot2grid((rows, 3), (0, 1), rowspan=rows-1, projection=PROJ)
-
+axD = subplot2grid((rows, 3), (0, 2), rowspan=rows-1, projection=PROJ)
+ax_cbar = subplot2grid((rows, 3), (rows-1, 0), colspan=2)
+ax_cbar_diff = subplot2grid((rows, 3), (rows-1, 2), colspan=2)
 
 # Actual plotting
 # Spatial maps
 latticks = [-70, -30, -0, 30, 70]
-
-coords = gnv(dims(Φ, Coord))
-lon = [l[1] for l in coords]
-lat = [l[2] for l in coords]
 
 vmin = vmins[i]
 vmax = vmaxs[i]
@@ -98,47 +76,49 @@ cmap = matplotlib.cm.get_cmap(:YlGnBu_r, length(lvls)-1)
 
 Φmap = timemean(Φ, OCEAN_MASK)
 Mmap = timemean(M, OCEAN_MASK)
+coords = gnv(dims(Φmap, Coord))
+lon = [l[1] for l in coords]
+lat = [l[2] for l in coords]
+
 
 sckwargs = (
-    transform = LONLAT, cmap, vmin, vmax, s = 6,
+    transform = LONLAT, cmap, vmin, vmax, s = 7,
 )
 axΦ.scatter(lon, lat; c = gnv(Φmap), sckwargs...)
 axM.scatter(lon, lat; c = gnv(Mmap), sckwargs...)
 axΦ.set_title(Φname*", CERES")
 axM.set_title(Φname*", MODEL")
-axΦ.coastlines()
-axM.coastlines()
-for ax in (axΦ, axM)
+# Colorbar
+norm = matplotlib.colors.Normalize(vmin=lvls[1], vmax=lvls[end])
+cb = matplotlib.colorbar.ColorbarBase(ax_cbar, cmap, norm, extend="both", orientation="horizontal")
+cb.set_ticks(lvls[1:max(1, levels÷5):end])
+
+# Difference map
+vdiff = (vmax - vmin)/4
+vmin = -vdiff; vmax = vdiff
+lvls = range(vmin, vmax, length = levels)
+cmap = matplotlib.cm.get_cmap(:YlGnBu_r, length(lvls)-1)
+cmap = matplotlib.cm.get_cmap(:PRGn, length(lvls)-1)
+sckwargs = (
+    transform = LONLAT, cmap, vmin, vmax, s = 7,
+)
+axD.set_title(Φname*", CERES - MODEL")
+norm = matplotlib.colors.Normalize(vmin=lvls[1], vmax=lvls[end])
+cb = matplotlib.colorbar.ColorbarBase(ax_cbar_diff, cmap, norm, extend="both", orientation="horizontal")
+cb.set_ticks(lvls[1:max(1, levels÷5):end])
+axD.scatter(lon, lat; c = gnv(Φmap .- Mmap), sckwargs...)
+
+for ax in (axΦ, axM, axD)
+    ax.coastlines()
     gl = ax.gridlines(alpha = 1)
     gl.ylocator = matplotlib.ticker.FixedLocator(latticks)
     gl.xlocator = matplotlib.ticker.FixedLocator([-90, 0, 90])
     # gl.xlines = false
 end
 
-# Colorbar
-norm = matplotlib.colors.Normalize(vmin=lvls[1], vmax=lvls[end])
-cb = matplotlib.colorbar.ColorbarBase(ax_cbar, cmap, norm, extend="both", orientation="horizontal")
-cb.set_ticks(lvls[1:max(1, levels÷5):end])
+fig.subplots_adjust(left = 0.01, right = 0.99, top = 0.99, wspace = 0.05)
 
-# zonal plot
-Ftz = maskedtimezonalmean(Φ, OCEAN_MASK, MAXDEG)
-Pstz = map(P -> maskedtimezonalmean(P, OCEAN_MASK, MAXDEG), Ps)
-Mtz = get_model_instance(expression, Pstz, params_tz)
-Mtzfull = maskedtimezonalmean(M, OCEAN_MASK, MAXDEG)
-
-Φlats = sind.(gnv(dims(Ftz, Lat)))
-
-axZ.plot(gnv(Ftz), Φlats; label = Φname, lw = 3)
-axZ.plot(gnv(Mtz), Φlats; label = "\$M_z\$", ls = "-.", alpha = 0.7, lw = 2.5)
-axZ.plot(gnv(Mtzfull), Φlats; label = "\$M\$", ls = "--", alpha = 0.7, lw = 2.5)
-
-axZ.set_yticks(sind.(latticks))
-axZ.set_yticklabels(string.(latticks) .* "ᵒ")
-axZ.legend(fontsize = 18)
-
-fig.subplots_adjust(left = 0.01, right = 0.99, top = 0.99)
-
-add_identifiers!(fig, (axΦ, axM, axZ))
+add_identifiers!(fig, (axΦ, axM, axD))
 wsave(papersdir("plots", "results_$(i)"), fig)
 
 # Temporal correlation map

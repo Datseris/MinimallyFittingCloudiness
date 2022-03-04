@@ -1,27 +1,31 @@
-# First we load the necessary packages, files, and arrays in memory
-using DrWatson
-@quickactivate "MinimalyFittingCloudiness"
-include(scriptsdir("predictors", "fields_definition.jl"));
+# # Introduction
+# This file performs the standardized nonlinear least squares fit on a prescribed target
+# field, a given set of predictors, and an expression for how to combine them. It calculates
+# various error measures and stores them in a dataframe.
 
 ###################################################################### #src
 # # Inputs/definitions of predictors (user input is here)
 ###################################################################### #src
+# First we load the necessary packages, files, and arrays in memory
+using DrWatson
+@quickactivate "MinimallyFittingCloudiness"
+include(scriptsdir("fields_definitions.jl"));
 # %% #src
 # ## Predictors
 # Define the predictors as a tuple of `Symbol`s, which can then access
 # the dictionary defined in the file `fields_definition.jl`
-predictors = (:Ω_nf, :ECTEI)
+predictors = (:Ω_std, :Ω_mean, :q700)
 
 # ## Field to be predicted
-# Here you can use any of `C, CREsw, L, F`, or whatever else.
-Φ = C
+# Symbol containing the name of the field.
+predicted = :L
 
 # ## Model definition
 # Here we express the model's inner code as a String, and later
 # we'll use Julia's metaprogramming to actually make it a runnable function.
 # Predictors are always expressed as `x1, x2, ...`, and the order corresponds
 # to the order of the `predictors` variable.
-model_expression = "p[1]*x1 + p[2]*x2*(1-x1)"
+model_expression = "p[1]*x1 + p[2]*x2 + p[3]*x3"
 
 # ## Fit constraints
 # We want to do two limitations:
@@ -34,8 +38,9 @@ ocean_mask_perc = 50 # points with % ≥ than this are considered "ocean"
 ######################################################################## #src
 # # Model fit code
 ######################################################################## #src
+Φ = field_dictionary[predicted]
 Ps = map(p -> getindex(field_dictionary, p), predictors)
-OCEAN_MASK = O .≥ ocean_mask_perc
+OCEAN_MASK = field_dictionary[:O] .≥ ocean_mask_perc
 include(srcdir("fitting", "general.jl"))
 include(srcdir("fitting", "masking.jl"))
 
@@ -66,7 +71,7 @@ pu = 1000ones(NP) # upper bounds
 # ## Fit full data
 X = ocean_masked(Φ, OCEAN_MASK, MAXDEG)
 Ys = [ocean_masked(P, OCEAN_MASK, MAXDEG) for P in Ps]
-@time M, err, p, = perform_fit(model, X, Ys, p0; lower = pl, upper = pu)
+@time M, err, p, = perform_fit(model, X, Ys, p0; lower = pl, upper = pu, show_info=true, n = 2)
 full_fit_error = err
 full_fit_params = p
 println("   Original NRMSE for FULL fit: ", err)
@@ -79,7 +84,9 @@ timemean_error, mean_correlation, timeseries_errors =
 # ## Fit zonal+time mean data only
 Ftz = maskedtimezonalmean(Φ, OCEAN_MASK, MAXDEG)
 Pstz = map(P -> maskedtimezonalmean(P, OCEAN_MASK, MAXDEG), Ps)
-Mtz, errtz, ptz, = perform_fit(model, Ftz, Pstz, p0; lower = pl, upper = pu, n = 100)
+w = cosd.(gnv(dims(Ftz, Lat))) # weights
+Mtz, errtz, ptz, = perform_fit(model, Ftz, Pstz, p0;
+lower = pl, upper = pu, n = 100, w)
 timezonal_fit_error = errtz
 timezonal_fit_params = ptz
 println("   -----------------------------------\n")

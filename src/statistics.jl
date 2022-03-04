@@ -65,6 +65,40 @@ function nrmse(x::AbstractVector, y::AbstractVector)
 end
 
 
+
+"Convenience function to compute seasonal nrmse as the median of four zones."
+function seasonal_nrmse(C, M, OCEAN_MASK = ones(C); latzones = (-90, -30, 0, 30, 90),
+    subtract_mean = true)
+    timeseries_errors = Float64[]
+    for j in 1:length(latzones)-1
+        l1, l2 = latzones[j], latzones[j+1]
+        Csel = C[Coord(Lat(l1..l2))]
+        Wsel = OCEAN_MASK[Coord(Lat(l1..l2))]
+        Msel = M[Coord(Lat(l1..l2))]
+        Csel = spacemean(Csel, Wsel)
+        Msel = spacemean(Msel, Wsel)
+        if subtract_mean
+            Csel = Csel .- mean(Csel)
+            Msel = Msel .- mean(Msel)
+        end
+        push!(timeseries_errors, nrmse(Csel, Msel))
+    end
+    return median(timeseries_errors)
+end
+
+function correlationmap(F, M, OCEAN_MASK)
+    FF = copy(F); MM = copy(M)
+    FF[.!OCEAN_MASK] .= NaN
+    MM[.!OCEAN_MASK] .= NaN
+    X = timemean(MM)
+    for i in spatialidxs(X)
+        X[i] = Statistics.cor(FF[i...], MM[i...])
+    end
+    aaa = spacemean(dropnan(X))
+    return X, aaa
+end
+
+
 using StatsBase
 # Oh damn, `monthlyagg(Ω, skewness)` does not work, both because DimData.jl doesn't extend
 # it, but also because StatsBase.jl doesn't have a `dims` method for it.

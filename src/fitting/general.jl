@@ -13,6 +13,12 @@ function eval_model_equations(model_expression, N::Int)
     eval(:(model(p, $(_vars_expand...), args...) = @. $(parsed_expression)))
 end
 
+function get_model_instance(expression, Ps, p)
+    eval_model_equations(expression, length(Ps))
+    yield() # If I don't do this, I run into world-age problems
+    return model(p, Ps...)
+end
+
 function multimodel(x::Matrix, p, model)
     return model(p, eachcol(x)...)
 end
@@ -35,19 +41,23 @@ The fit is the best ouf of `n` different and random initial parameter configurat
 within the space allowed by `lower` and `upper`.
 """
 function perform_fit(model, c, xs, p0;
-        lower = fill(-Inf, length(p0)),
-        upper = fill(Inf,  length(p0)),
-        n = 10, show_info = false,
+        lower = fill(-10_000.0, length(p0)),
+        upper = fill(10_000.0,  length(p0)),
+        n = 10, show_info = false, w = nothing,
     )
     fitter = (x, p) -> multimodel(x, p, model)
-    M = init_empty_model(c)
+    M = init_empty_model(c, p0)
     xdata = hcat([vec(x) for x in xs]...)
     ydata = vec(c)
     err = Inf
     bestp = p0
     for m in 1:n
         p = m == 1 ? p0 : random_params(p0, lower, upper)
-        modelfit = LsqFit.curve_fit(fitter, xdata, ydata, p; upper, lower)
+        if isnothing(w)
+            modelfit = LsqFit.curve_fit(fitter, xdata, ydata, p; upper, lower)
+        else
+            modelfit = LsqFit.curve_fit(fitter, xdata, ydata, w, p; upper, lower)
+        end
         pfit = modelfit.param
         cerr = LsqFit.mse(modelfit)
         if cerr < err
@@ -74,5 +84,5 @@ function random_params(p0, lower, upper)
     return p
 end
 
-init_empty_model(c::ClimArray) = ClimArray(copy(c); name = "Model fit", attrib = copy(p0))
-init_empty_model(c) = copy(c)
+init_empty_model(c::ClimArray, p0) = ClimArray(copy(c); name = "Model fit", attrib = copy(p0))
+init_empty_model(c, p0) = copy(c)

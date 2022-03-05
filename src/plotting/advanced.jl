@@ -72,7 +72,6 @@ function plot_spacetime_comparison(X, M)
         j = findall(!isnan, z)
         vmin, vmax = extrema(z[j])
     end
-    @show vmin, vmax
     im = axs[1].pcolormesh(ycoord, xcoord, X.data; vmin, vmax)
     fig.colorbar(im, ax=axs[1])
     im = axs[2].pcolormesh(ycoord, xcoord, M.data; vmin, vmax)
@@ -163,7 +162,7 @@ end
 
 function plot_total_model_comparison(C, Xs, model, p, OCEAN_MASK; MAXDEG = 91)
     name = string(C.name)
-    
+
     println("Creating full model field...")
     M = ClimArray(model(p, Xs...); name = "Model")
 
@@ -198,14 +197,15 @@ function plot_total_model_comparison(C, Xs, model, p, OCEAN_MASK; MAXDEG = 91)
     vdif = cb.vmax/3
     earthscatter!(axD, dmap; vmin=-vdif, vmax=vdif, levels = 21, cmap = "PuOr")
     axD.set_title("$name - M")
-    
+
     # Time variability stuff:
-    
+
     # spatial correlation plot
     CC = copy(C); MM = copy(M)
     CC[.!OCEAN_MASK] .= NaN
     MM[.!OCEAN_MASK] .= NaN
     mean_correlation = plot_correlation_maps(CC, MM)
+    println("Average pearson coefficien: ", mean_correlation)
 
     # latitude zones timeseries (new)
     timeseries_errors = Float64[]
@@ -219,10 +219,14 @@ function plot_total_model_comparison(C, Xs, model, p, OCEAN_MASK; MAXDEG = 91)
         Csel = spacemean(Csel, Wsel)
         Msel = spacemean(Msel, Wsel)
 
+        demeaned = []
+
         # axs[i, 2].plot(t[100:200], out[100:200]; lw = 1.0, label = "$j")
-        for (n, out) in enumerate((Csel, Msel))    
+        for (n, out) in enumerate((Csel, Msel))
             dates, vals = seasonality(out)
             m = mean.(vals)
+            m = m .- mean(m)
+            push!(demeaned, m)
             push!(m, m[1])
             v = std.(vals)
             push!(v, v[1])
@@ -230,9 +234,13 @@ function plot_total_model_comparison(C, Xs, model, p, OCEAN_MASK; MAXDEG = 91)
             ls = n == 1 ? "-" : "--")
             axs[j].fill_between(1:13, m.-v, m.+v; color = "C$(n-1)", alpha = 0.5)
         end
-        push!(timeseries_errors, nrmse(Csel, Msel))
+        # push!(timeseries_errors, nrmse(Csel, Msel))
+        push!(timeseries_errors, nrmse(demeaned[1], demeaned[2]))
         axs[j].set_ylabel("($(l1),$(l2))")
     end
+
+    println("Timeseries error: ", median(timeseries_errors))
+
 
     # # hemispheric timeseries (old)
     # Xnh, Xsh = hemispheric_means(C, OCEAN_MASK)

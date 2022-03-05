@@ -47,6 +47,7 @@ function mink(a, k)
 end
 
 error1 = d[error1_name]
+@show maximum(error1)
 error2 = d[error2_name]
 
 toplot = copy(error1)
@@ -83,10 +84,6 @@ j = argmin(error1 .* error2)
 highlight_cell(reverse(j.I); color = :black, linewidth = 4, linestyle = :dashed)
 highlight_cell(j.I; color = :black, linewidth = 4, linestyle = :dashed)
 
-# if axi == 1
-#     text(0.95, 0.05, error1_name; transform = ax.transAxes, size = textsize, ha="right")
-#     text(0.05, 0.95, error2_name; transform = ax.transAxes, size = textsize)
-# end
 
 end
 

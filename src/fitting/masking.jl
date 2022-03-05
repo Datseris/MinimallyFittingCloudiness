@@ -37,7 +37,7 @@ function ocean_masked(X, OCEAN_MASK, MAXDEG)
     latitude_bounding = Coord(Lat(Between(-MAXDEG, MAXDEG)))
     Xbounded = X[latitude_bounding]
     bounded_mask_selection = OCEAN_MASK[latitude_bounding]
-    return Xbounded[bounded_mask_selection]
+    return Xbounded.data[bounded_mask_selection.data]
 end
 
 
@@ -49,9 +49,36 @@ function maskedtimezonalmean(Φ, OCEAN_MASK, MAXDEG)
     to_non_nan_lats(
         timemean(
             zonalmean(
-                Φ[Coord(Lat((-MAXDEG)..(MAXDEG)))], 
+                Φ[Coord(Lat((-MAXDEG)..(MAXDEG)))],
                 OCEAN_MASK[Coord(Lat((-MAXDEG)..(MAXDEG)))]
             )
+        )
+    )
+end
+
+
+"""
+    maskedspacemean(X, OCEAN_MASK, MAXDEG) → masked::Vector
+Return the spatial map (i.e., timemean), masked by the given mask and limited to ± `MAXDEG`.
+"""
+function maskedspacemean(Φ, OCEAN_MASK, MAXDEG)
+    x = timemean(
+        Φ[Coord(Lat((-MAXDEG)..(MAXDEG)))],
+        OCEAN_MASK[Coord(Lat((-MAXDEG)..(MAXDEG)))]
+    )
+    return dropnan(x)
+end
+
+
+"""
+    maskedtimezonalmean(X, OCEAN_MASK, MAXDEG) → masked::Vector
+Given a timemean of a field do a masked zonal mean.
+"""
+function maskedzonalmean(Φ, OCEAN_MASK, MAXDEG)
+    to_non_nan_lats(
+        zonalmean(
+            Φ[Coord(Lat((-MAXDEG)..(MAXDEG)))],
+            timemean(OCEAN_MASK[Coord(Lat((-MAXDEG)..(MAXDEG)))])
         )
     )
 end

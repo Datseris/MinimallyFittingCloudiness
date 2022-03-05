@@ -12,6 +12,7 @@ predictors = (:Ω_mean, :Ω_std, :Ω_nf, :WS10, :Tsfc, :EIS, :ECTEI, :V, :q700)
 predicted = :C
 MAXDEG = 80 # fit only within ± MAXDEG
 ocean_mask_perc = 50 # points with % ≥ than this are considered "ocean"
+
 # %% #src
 allow_intercept = false
 
@@ -30,7 +31,6 @@ else
 end
 full_error, timezonal_error, seasonal_error, mean_pearson = [ones(n, n) for _ in 1:4]
 
-
 for i in 1:n
     X1 = field_dictionary[predictors[i]]
     X1masked = ocean_masked(X1, OCEAN_MASK, MAXDEG)
@@ -38,7 +38,6 @@ for i in 1:n
     Xmasked[:, 1] .= X1masked
 
     for j in (i+1):n
-
         X2 = field_dictionary[predictors[j]]
         X2masked = ocean_masked(X2, OCEAN_MASK, MAXDEG)
         X2tz = maskedtimezonalmean(X2, OCEAN_MASK, MAXDEG)
@@ -46,7 +45,7 @@ for i in 1:n
 
         # Fit using LsqFit
         if fitter_used == LsqFit
-            modelfit = LsqFit.curve_fit(linearmodel, Xmasked, Ymasked, [0.0, 0.0, 0.0])
+            modelfit = LsqFit.curve_fit(linearmodel, Xmasked, Ymasked, ones(3))
             p1, p2 = modelfit.param
             p3 = allow_intercept ? modelfit.param[3] : 0
         elseif fitter_used == GLM
@@ -54,15 +53,15 @@ for i in 1:n
             p1, p2 = GLM.coef(modelfit)
             p3 = allow_intercept ? GLM.coef(modelfit)[3] : 0
         end
-        @show (i, j, p1, p2)
+        @show (i, j, p1, p2, p3)
 
         # Fit using GLM
         # Extract error measures
         M = @. p1*X1 + p2*X2 + p3
         Mmasked = @. p1*X1masked + p2*X2masked + p3
         Mtz = @. p1*X1tz + p2*X2tz + p3
-        full_error[i,j] = nrmse(Mmasked, Ymasked)
-        timezonal_error[i, j] = nrmse(Mtz, Ytz)
+        full_error[i,j] = nrmse(Ymasked, Mmasked)
+        timezonal_error[i, j] = nrmse(Ytz, Mtz)
         seasonal_error[i, j] = seasonal_nrmse(Y, M, OCEAN_MASK)
         mean_pearson[i, j] = 1 - correlationmap(Y, M, OCEAN_MASK)[2]
     end

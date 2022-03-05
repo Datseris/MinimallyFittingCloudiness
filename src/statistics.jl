@@ -20,7 +20,7 @@ regularize(x) = regularize!(copy(x))
 regularize!(x) = (x .= (x .- mean(x))./std(x))
 
 
-export nrmse, rmse
+export nrmse, mse
 function mse(x, y)
     m = length(x)
     @assert m == length(y)
@@ -32,14 +32,10 @@ function mse(x, y)
     end
     return mse
 end
+mse(x, y::Real) = mse(x, fill(y, length(x)))
 
 using Statistics: mean
 
-"""
-    rmse(x, y) → e
-Return the root mean square error `e` of the "fit" `y` into data `x`.
-"""
-rmse(x, y) = sqrt(mse(x, y))
 
 """
     nrmse(x, y) → e
@@ -67,8 +63,7 @@ end
 
 
 "Convenience function to compute seasonal nrmse as the median of four zones."
-function seasonal_nrmse(C, M, OCEAN_MASK = ones(C); latzones = (-90, -30, 0, 30, 90),
-    subtract_mean = true)
+function seasonal_nrmse(C, M, OCEAN_MASK = ones(C); latzones = (-90, -30, 0, 30, 90))
     timeseries_errors = Float64[]
     for j in 1:length(latzones)-1
         l1, l2 = latzones[j], latzones[j+1]
@@ -77,16 +72,20 @@ function seasonal_nrmse(C, M, OCEAN_MASK = ones(C); latzones = (-90, -30, 0, 30,
         Msel = M[Coord(Lat(l1..l2))]
         Csel = spacemean(Csel, Wsel)
         Msel = spacemean(Msel, Wsel)
-        if subtract_mean
-            Csel = Csel .- mean(Csel)
-            Msel = Msel .- mean(Msel)
+        demeaned = []
+        for (n, out) in enumerate((Csel, Msel))
+            dates, vals = seasonality(out)
+            m = mean.(vals)
+            m = m .- mean(m)
+            push!(demeaned, m)
         end
-        push!(timeseries_errors, nrmse(Csel, Msel))
+        push!(timeseries_errors, nrmse(demeaned[1], demeaned[2]))
+        # push!(timeseries_errors, nrmse(Csel, Msel))
     end
     return median(timeseries_errors)
 end
 
-function correlationmap(F, M, OCEAN_MASK)
+function correlationmap(F, M, OCEAN_MASK = trues(F))
     FF = copy(F); MM = copy(M)
     FF[.!OCEAN_MASK] .= NaN
     MM[.!OCEAN_MASK] .= NaN

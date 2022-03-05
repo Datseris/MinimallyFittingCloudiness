@@ -97,7 +97,6 @@ cb.set_ticks(lvls[1:max(1, levels÷5):end])
 vdiff = (vmax - vmin)/4
 vmin = -vdiff; vmax = vdiff
 lvls = range(vmin, vmax, length = levels)
-cmap = matplotlib.cm.get_cmap(:YlGnBu_r, length(lvls)-1)
 cmap = matplotlib.cm.get_cmap(:PRGn, length(lvls)-1)
 sckwargs = (
     transform = LONLAT, cmap, vmin, vmax, s = 7,
@@ -122,7 +121,7 @@ add_identifiers!(fig, (axΦ, axM, axD))
 wsave(papersdir("plots", "results_$(i)"), fig)
 
 # Temporal correlation map
-cormap, aaa = correlationmap(Φ, M)
+cormap, aaa = correlationmap(Φ, M, OCEAN_MASK)
 earthscatter!(coraxis[i], cormap; s = 30, vmin = -1, vmax = 1, cmap = "PRGn", add_colorbar = false, levels = 11)
 coraxis[i].set_title("$(fieldnames[i]), avg. corr = $(rdspl(aaa, 3))")
 if i == 1 # Colorbar
@@ -132,6 +131,8 @@ if i == 1 # Colorbar
     cb = matplotlib.colorbar.ColorbarBase(ax_cbar_temp, cmap, norm, ticklocation="top",extend="both", orientation="horizontal")
     cb.set_ticks(lvls)
 end
+
+
 # Zonal mean plots
 for j in 1:length(latzones)-1
 

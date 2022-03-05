@@ -14,18 +14,18 @@ include(scriptsdir("fields_definitions.jl"));
 # ## Predictors
 # Define the predictors as a tuple of `Symbol`s, which can then access
 # the dictionary defined in the file `fields_definition.jl`
-predictors = (:Ω_std, :Ω_mean, :q700)
+predictors = (:Ω_nf, :ECTEI)
 
 # ## Field to be predicted
 # Symbol containing the name of the field.
-predicted = :L
+predicted = :C
 
 # ## Model definition
 # Here we express the model's inner code as a String, and later
 # we'll use Julia's metaprogramming to actually make it a runnable function.
 # Predictors are always expressed as `x1, x2, ...`, and the order corresponds
 # to the order of the `predictors` variable.
-model_expression = "p[1]*x1 + p[2]*x2 + p[3]*x3"
+model_expression = "p[1]*x1 + p[2]*x2*(1 - x1)"
 
 # ## Fit constraints
 # We want to do two limitations:
@@ -98,7 +98,6 @@ println("   -----------------------------------")
 fig = figure(); ax = gca();
 ax.plot(sind.(gnv(dims(Ftz, Lat))), Ftz.data; label = Φ.name)
 ax.plot(sind.(gnv(dims(Mtz, Lat))), Mtz.data; label = "M, nrmse = $(round(errtz;sigdigits=3))", ls = "-.")
-(Ftz, Pstz, model, ptz)
 fig.suptitle("fit using only zonal+time mean data\nMAXDEG=$(MAXDEG), OCEAN_FRAC=$(ocean_mask_perc)")
 ax.legend()
 fig.tight_layout(pad=0.3)

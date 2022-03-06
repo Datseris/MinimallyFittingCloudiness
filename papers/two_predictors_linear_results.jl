@@ -84,7 +84,6 @@ j = argmin(error1 .* error2)
 highlight_cell(reverse(j.I); color = :black, linewidth = 4, linestyle = :dashed)
 highlight_cell(j.I; color = :black, linewidth = 4, linestyle = :dashed)
 
-
 end
 
 

@@ -15,10 +15,11 @@ include(scriptsdir("fields_definitions.jl"));
 # Define the predictors as a tuple of `Symbol`s, which can then access
 # the dictionary defined in the file `fields_definition.jl`
 predictors = (:Ω_nf, :ECTEI)
+predictors = (:Ω_std, :Ω_mean, :q700)
 
 # ## Field to be predicted
 # Symbol containing the name of the field.
-predicted = :C
+predicted = :L
 
 # ## Model definition
 # Here we express the model's inner code as a String, and later
@@ -26,13 +27,14 @@ predicted = :C
 # Predictors are always expressed as `x1, x2, ...`, and the order corresponds
 # to the order of the `predictors` variable.
 model_expression = "p[1]*x1 + p[2]*x2*(1 - x1)"
+model_expression = "p[1]*x1 + p[2]*x2 +p[3]*x3"
 
 # ## Fit constraints
 # We want to do two limitations:
 # * Fit only over ocean
 # * Fit within a range of latitudes only
 # To this end, we define:
-MAXDEG = 80 # fit only within ± MAXDEG
+MAXDEG = 70 # fit only within ± MAXDEG
 ocean_mask_perc = 50 # points with % ≥ than this are considered "ocean"
 
 ######################################################################## #src

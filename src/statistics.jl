@@ -87,12 +87,16 @@ end
 
 function correlationmap(F, M, OCEAN_MASK = trues(F))
     FF = copy(F); MM = copy(M)
-    FF[.!OCEAN_MASK] .= NaN
-    MM[.!OCEAN_MASK] .= NaN
+    # Better way to find NaNs
+    # FF[.!OCEAN_MASK] .= NaN
+    # MM[.!OCEAN_MASK] .= NaN
     X = timemean(MM)
     for i in spatialidxs(X)
         X[i] = Statistics.cor(FF[i...], MM[i...])
     end
+    ZZZ = timemean(F, OCEAN_MASK)
+    i = findall(isnan, ZZZ)
+    X[i] .= NaN
     aaa = spacemean(dropnan(X))
     return X, aaa
 end

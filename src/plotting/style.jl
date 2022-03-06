@@ -3,7 +3,7 @@ Style file for plotting
 =#
 using PyPlot, DrWatson
 using Printf
-DrWatson._wsave(s, fig::Figure) = fig.savefig(s, dpi = 600, transparent = true)
+DrWatson._wsave(s, fig::Figure; kwargs...) = fig.savefig(s; dpi = 600, transparent = true, kwargs...)
 
 """
     rdspl(x, n = 4)

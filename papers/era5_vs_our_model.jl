@@ -15,7 +15,7 @@ OCEAN_MASK = field_dictionary[:O] .≥ ocean_mask_perc
 # Some plotting helper functions
 function plot_zonal_comparison!(CERES_tz, ERA5_tz, MODEL_tz, MODEL_tz2=nothing; ax = gca())
     alpha = 0.8
-    latticks = [-70, -30, -0, 30, 70]
+    latticks = [-70, -45, -30, -15, -0, 15, 30, 45, 70]
     Φlats = sind.(gnv(dims(CERES_tz, Lat)))
     e1 = nrmse(CERES_tz, ERA5_tz)
     e2 = nrmse(CERES_tz, MODEL_tz)
@@ -93,13 +93,13 @@ CERES_FIELDS = (Lall, Lclr, L)
 ERA5_FIELDS = (Lall_ERA5, Lclr_ERA5, L_ERA5)
 
 # Alright, plot the comparison of all fields now
-compare_field_maps(CERES_FIELDS, ERA5_FIELDS)
+## compare_field_maps(CERES_FIELDS, ERA5_FIELDS)
 
 # Next, calculate our model fit, in two ways:
 # 1. On full data (as always)
 # 2. On zonally+temporally averaged data (just to make case that this does not matter much)
 
-predictors = (:Ω_std, :Ω_mean, :q700)
+predictors = (:Ω_std, :Ω_mean, :Tsfc)
 model_expression = "p[1]*x1 + p[2]*x2 +p[3]*x3"
 eval_model_equations(model_expression, predictors)
 
@@ -163,13 +163,13 @@ end
 # And then, plot spatial maps of all fields just to be sure everything makes sense
 CERES_FIELDS = (CERES_FIELDS..., α_CERES)
 ERA5_FIELDS = (ERA5_FIELDS..., α_ERA5)
-compare_field_maps(CERES_FIELDS, ERA5_FIELDS)
+## compare_field_maps(CERES_FIELDS, ERA5_FIELDS)
 
 # ## Fit and comparison
 # We can now do the full fit. Similarly with the L case, we will fit (1) over full space
 # and (2) only zonal mean as well.
-predictors = (:Ω_nf, :ECTEI)
-model_expression = "p[1]*x1 + p[2]*x2*(1-x1)"
+predictors = (:Ω_mean, :ECTEI)
+model_expression = "p[1]*50*(tanh(p[2]*x1 + p[3]*x2) + 1)"
 eval_model_equations(model_expression, predictors)
 
 # (1):
@@ -197,11 +197,14 @@ plot_zonal_comparison!(Ytz, α_ERA5_tz, M1, Mtz; ax = axC)
 
 # Final adjustments before saving
 # %% #src
+
 mainfig.tight_layout()
+axL.tick_params(axis="both"; labelsize=20)
+axC.tick_params(axis="both"; labelsize=20)
 axL.set_title("longwave cloud radiative effect \$L\$", fontsize = 24)
 axL.legend(fontsize = 18, loc = "upper left")
 axC.set_title("cloud contribution to albedo \$\\alpha^\\mathrm{CLD}\$", fontsize = 24)
 axC.legend(fontsize = 18)
 add_identifiers!(mainfig)
-mainfig.subplots_adjust(bottom = 0.12)
+mainfig.subplots_adjust(left = 0.05, right = 0.99, top = 0.9, wspace = 0.1)
 wsave(papersdir("plots", "versus_era5"), mainfig)

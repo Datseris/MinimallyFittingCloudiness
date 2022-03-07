@@ -14,20 +14,20 @@ include(scriptsdir("fields_definitions.jl"));
 # ## Predictors
 # Define the predictors as a tuple of `Symbol`s, which can then access
 # the dictionary defined in the file `fields_definition.jl`
-predictors = (:Ω_nf, :ECTEI)
-predictors = (:Ω_std, :Ω_mean, :q700)
+predictors = (:Ω_std, :Ω_mean, :Tsfc)
+predictors = (:Ω_mean, :ECTEI)
 
 # ## Field to be predicted
 # Symbol containing the name of the field.
-predicted = :L
+predicted = :C
 
 # ## Model definition
 # Here we express the model's inner code as a String, and later
 # we'll use Julia's metaprogramming to actually make it a runnable function.
 # Predictors are always expressed as `x1, x2, ...`, and the order corresponds
 # to the order of the `predictors` variable.
-model_expression = "p[1]*x1 + p[2]*x2*(1 - x1)"
-model_expression = "p[1]*x1 + p[2]*x2 +p[3]*x3"
+model_expression = "p[1]*x1 + p[2]*x2 + p[3]*x3"
+model_expression = "p[1]*50*(tanh(p[2]*x1 + p[3]*x2) + 1)"
 
 # ## Fit constraints
 # We want to do two limitations:
@@ -65,21 +65,24 @@ plot_zonal_averages([oceany_zonalmean(X, OCEAN_MASK) for X in (Φ, Ps...)])
 # We obtain the necessary parameters from the fit and always then generate a
 # **full** spatiotemporal field that is the model fit, by using the
 # spatiotemporal fields of the predictors.
-NP = 8 # allow up to `NP` parameters
+NP = 4 # allow up to `NP` parameters
 p0 = ones(NP) # initial parameters don't matter, 10 random seeds are taken
 pl = -1000ones(NP) # lower bounds
 pu = 1000ones(NP) # upper bounds
 
 # ## Fit full data
-X = ocean_masked(Φ, OCEAN_MASK, MAXDEG)
-Ys = [ocean_masked(P, OCEAN_MASK, MAXDEG) for P in Ps]
-@time M, err, p, = perform_fit(model, X, Ys, p0; lower = pl, upper = pu, show_info=true, n = 2)
+println("\n\n---Starting fit")
+Y = ocean_masked(Φ, OCEAN_MASK, MAXDEG)
+Xs = [ocean_masked(P, OCEAN_MASK, MAXDEG) for P in Ps]
+@time M, err, p, = perform_fit(model, Y, Xs, p0; lower = pl, upper = pu, show_info=false, n = 2)
 full_fit_error = err
 full_fit_params = p
+@show predictors
+@show model_expression
 println("   Original NRMSE for FULL fit: ", err)
-println("   MAXDEG=$(MAXDEG), OCEAN_FRAC=$(ocean_mask_perc)")
+# println("   Mean-normalized error: ", μrmse(M, Y))
 println("   fit parameters: ", p, '\n')
-timemean_error, mean_correlation, timeseries_errors =
+timemean_error, mean_correlation, timeseries_errors, timezonal_full_error =
     plot_total_model_comparison(Φ, Ps, model, p, OCEAN_MASK; MAXDEG)
 
 
@@ -91,10 +94,11 @@ Mtz, errtz, ptz, = perform_fit(model, Ftz, Pstz, p0;
 lower = pl, upper = pu, n = 100, w)
 timezonal_fit_error = errtz
 timezonal_fit_params = ptz
-println("   -----------------------------------\n")
+println("   \n")
 println("   Original NRMSE for TIME+ZONAL+MEAN fit: ", errtz)
+# println("   Mean-normalized error for TIMEZONAL mean fit: ", μrmse(Ftz, Mtz))
 println("   with parameters: ", ptz, '\n')
-println("   -----------------------------------")
+println("   --------------------------------------------------------------\n")
 
 # Plot resulting fit
 fig = figure(); ax = gca();
@@ -113,7 +117,8 @@ df = isfile(filename) ? load(filename)["df"] : DataFrame(
     ## Column names of an empty dataframe to initialize
     predictors = [], expression = String[], ocean_mask_perc = Float64[],
     maxdeg = Float64[], full_fit_error = Float64[], full_fit_params = Vector{Float64}[],
-    timemean_error = Float64[], mean_correlation = Float64[], timeseries_errors = Vector{Float64}[],
+    timemean_error = Float64[], mean_correlation = Float64[],
+    timeseries_errors = Vector{Float64}[], timezonal_full_error = Float64[],
     timezonal_fit_error = Float64[], timezonal_fit_params = Vector{Float64}[],
 )
 
@@ -121,7 +126,8 @@ df = isfile(filename) ? load(filename)["df"] : DataFrame(
 # (order of elements must match order declared in DataFrame initialization)
 newrow = (
     predictors, model_expression, Float64(ocean_mask_perc), Float64(MAXDEG),
-    full_fit_error, full_fit_params, timemean_error, mean_correlation, timeseries_errors,
+    full_fit_error, full_fit_params, timemean_error, mean_correlation,
+    timeseries_errors, timezonal_full_error,
     timezonal_fit_error, timezonal_fit_params,
 )
 
@@ -133,10 +139,10 @@ if !(any(x -> isequal(Tuple(x), tocheck), Tables.namedtupleiterator(df[!, 1:4]))
 end
 
 # Subselect dataframe for presentation
-df2 = select(df, :predictors, :expression, :timezonal_fit_error,
+df2 = select(df, :predictors, :expression, :timezonal_full_error,
 :timeseries_errors => ByRow(median) => :seasonal_error)
 
-sort!(df2, :timezonal_fit_error)
+sort!(df2, :timezonal_full_error)
 
 
 # %% Make it a notebook #src

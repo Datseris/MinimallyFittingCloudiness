@@ -265,7 +265,8 @@ function plot_total_model_comparison(C, Xs, model, p, OCEAN_MASK; MAXDEG = 91)
     zC, zM = tozonalmean(C), tozonalmean(M)
     println("Zonally-avg. NRMSE: ", nrmse(zC, zM))
     plot_spacetime_comparison(zC, zM)
-    println("Zonal+time-avg NRMSE: ", nrmse(timemean(zC), timemean(zM)))
+    timezonal_full_error = nrmse(timemean(zC), timemean(zM))
+    println("Zonal+time-avg NRMSE: ", timezonal_full_error)
 
     oceany_zonal(X) = to_non_nan_lats(timemean(zonalmean(X, OCEAN_MASK)))
     zP = [oceany_zonal(P) for P in Xs]
@@ -273,7 +274,7 @@ function plot_total_model_comparison(C, Xs, model, p, OCEAN_MASK; MAXDEG = 91)
     fig, axs = plot_step_by_step_comparison(zX, zP, model, p)
     axs[1].set_title("fit using full data\nMAXDEG=$(MAXDEG), OCEAN_FRAC=$(ocean_mask_perc)")
     fig.tight_layout(pad=0.3)
-    return timemean_error, mean_correlation, timeseries_errors
+    return timemean_error, mean_correlation, timeseries_errors, timezonal_full_error
 end
 
 function plot_step_by_step_comparison(X, Ps, model, p; latzones = (-90, -30, 0, 30, 90))

@@ -79,10 +79,17 @@ for i in 1:3
     conmap = timemean(c, OCEAN_MASK)
     axc = (axc1, axc2, axc3)[i]
     axc_cbar = (axc1_cbar, axc2_cbar, axc3_cbar)[i]
-    lvls = range(minimum(dropnan(conmap)), maximum(dropnan(conmap)); length = levels)
-    cmap = matplotlib.cm.get_cmap(:inferno, length(lvls)-1)
+    cvmin = minimum(dropnan(conmap))
+    cvmax = maximum(dropnan(conmap))
+    ccmap = contrib_cmaps[i]
+    if ccmap == :BrBG
+        cvmax = max(cvmax, -cvmin)
+        cvmin = -cvmax
+    end
+    lvls = range(cvmin, cvmax; length = levels)
+    cmap = matplotlib.cm.get_cmap(ccmap, length(lvls)-1)
     sckwargs = (
-        transform = LONLAT, cmap, s = 7,
+        transform = LONLAT, cmap, s = 7, vmin = minimum(lvls), vmax = maximum(lvls),
     )
     axc.scatter(lon, lat; c = gnv(conmap), sckwargs...)
     axc.set_title(contribution_titles[i], size = title_size)
@@ -149,5 +156,5 @@ fig.subplots_adjust(
     left = 0.03, right = 0.99, top = 0.97, wspace = 0.05, hspace = 0.5, bottom = 0.05
 )
 
-wsave(papersdir("plots", "results_$(predicted)"), fig; transparent = false)
+wsave(papersdir("plots", "results_$(predicted).pdf"), fig; transparent = false, dpi = 100)
 PyPlot.ion()

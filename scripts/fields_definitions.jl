@@ -38,11 +38,10 @@ ICE = ncread(SYN1deg, "aux_snow_mon"; name = "ice_fraction")
 LAND = ClimArray(100 .- O .- ICE; name = "land_fraction")
 
 # Predictors based on wind speed
-Ω_mean = ClimArray(-1000ncread(ERA5_Ω, "W_mean"); name = "Ω_mean") # notice -1000 !
+Ω_mean = ClimArray(-ncread(ERA5_Ω, "W_mean"); name = "Ω_mean") # notice -1000 !
 Ω_std = ncread(ERA5_Ω, "W_std"; name = "Ω_std")
 Ω_nf = ncread(ERA5_Ω, "W_nf"; name = "Ω_nf")
 WS10 = ncread(ERA5_2D, "si10"; name = "wind10")
-
 
 # Remaining predictors are thermodynamics-based
 # RH = ncread(ERA5_3D, "r"; name = "relative_humidity")
@@ -56,6 +55,7 @@ V = ncread(ERA5_2D, "tcwv")
 
 EIS = estimated_inversion_strength(Tsfc, T700; Psfc)
 EIS = ClimArray(EIS; name = "EIS")
+EIS_POSITIVE = ClimArray(clamp.(EIS, 0, Inf); name = "EIS_POSITIVE")
 
 q = ncread(ERA5_3D, "q"; name= "q")
 q = 1000q # multiply with 1000 to make it in units of g/kg instead of kg/kg
@@ -88,7 +88,7 @@ U = ClimArray(ones(CRE); name = "intercept")
 # Bring every field to the same time span
 field_dictionary = @dict(
     CREsw, L, CRE, C, I, Z, O, Ω_mean, Ω_std, Ω_nf, WS10,
-    q700, qsfc, T700, Tsfc, V, EIS, ECTEI, U, L, F, LTS
+    q700, qsfc, T700, Tsfc, V, EIS, ECTEI, U, L, F, LTS, EIS_POSITIVE
 )
 
 field_dictionary = sametimespan(field_dictionary; maxtime = Date(2999, 12, 30))

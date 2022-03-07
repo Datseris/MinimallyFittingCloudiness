@@ -1,17 +1,16 @@
 #=
 This file performs a multilinear regression of a given field `F`
 over given predictor fields `Ps`. The regression is done individually at each
-spatial point. It then plots the coefficients of each predictor at each 
+spatial point. It then plots the coefficients of each predictor at each
 spatial point. The coefficients are normalized versus the average timeseries std
 of the predictors.
 
 This is inspired by Fig. 1 of:
-> Grise, K. M., & Kelleher, M. K. (2021). Midlatitude cloud radiative effect sensitivity 
-> to cloud controlling factors in observations and models: Relationship with southern 
-> hemisphere jet shifts and climate sensitivity. Journal of Climate, 34(14), 5869–5886. 
+> Grise, K. M., & Kelleher, M. K. (2021). Midlatitude cloud radiative effect sensitivity
+> to cloud controlling factors in observations and models: Relationship with southern
+> hemisphere jet shifts and climate sensitivity. Journal of Climate, 34(14), 5869–5886.
 > https://doi.org/10.1175/JCLI-D-20-0986.1
 
-but notice that here I do not fit anomalies.
 =#
 
 ###################################################################### #src
@@ -47,7 +46,7 @@ coord = dims(F, Coord)
 pnames = [String(P.name) for P in Ps]
 coefs = Dim{:coef}(pnames)
 
-attrib = Dict("Description" => 
+attrib = Dict("Description" =>
 "Contains coeffients of linear fit for a given predictor and for a given space point.
 Coefficeints are normalized by temporal std of predictor, averaged over all grid cells.")
 

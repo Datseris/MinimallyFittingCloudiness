@@ -60,7 +60,7 @@ function nrmse(x::AbstractVector, y::AbstractVector)
     return nrmse
 end
 
-
+μrmse(x, y) = sqrt(mse(x, y))/mean(dropnan(x))
 
 "Convenience function to compute seasonal nrmse as the median of four zones."
 function seasonal_nrmse(C, M, OCEAN_MASK = ones(C); latzones = (-90, -30, 0, 30, 90))

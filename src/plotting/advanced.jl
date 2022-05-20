@@ -160,17 +160,19 @@ function plot_spatial_map_with_mask_lat(C, OCEAN_MASK, MAXDEG = 91;
     return fig, axC
 end
 
-function plot_total_model_comparison(C, Xs, model, p, OCEAN_MASK; MAXDEG = 91)
+function plot_total_model_comparison(C, Xs, model, p, OCEAN_MASK;
+        MAXDEG = 91, MINDEG = -MAXDEG
+    )
     name = string(C.name)
 
     println("Creating full model field...")
     M = ClimArray(model(p, Xs...); name = "Model")
 
     if MAXDEG < 90
-        C = C[Coord(Lat(Between(-MAXDEG, MAXDEG)))]
-        M = M[Coord(Lat(Between(-MAXDEG, MAXDEG)))]
-        OCEAN_MASK = OCEAN_MASK[Coord(Lat(Between(-MAXDEG, MAXDEG)))]
-        Xs = map(X -> X[Coord(Lat(Between(-MAXDEG, MAXDEG)))], Xs)
+        C = C[Coord(Lat(Between(MINDEG, MAXDEG)))]
+        M = M[Coord(Lat(Between(MINDEG, MAXDEG)))]
+        OCEAN_MASK = OCEAN_MASK[Coord(Lat(Between(MINDEG, MAXDEG)))]
+        Xs = map(X -> X[Coord(Lat(Between(MINDEG, MAXDEG)))], Xs)
     end
     full_nrmse = nrmse(C[OCEAN_MASK], M[OCEAN_MASK])
     println("Full NRMSE: ", full_nrmse)

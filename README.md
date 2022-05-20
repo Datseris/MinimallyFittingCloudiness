@@ -11,9 +11,8 @@ to make a reproducible scientific project named accompanying the paper _Minimali
 ## Reproducing the code
 To (locally) reproduce this project, do the following:
 
-0. Download this code base. Notice that raw data are typically not included in the
-   git-history and may need to be downloaded independently.
-1. Open a Julia console and do:
+1. Download this code base. Notice that raw data are not included here.
+2. Open a Julia console and do:
    ```
    julia> using Pkg
    julia> Pkg.add("DrWatson") # install globally, for using `quickactivate`
@@ -29,7 +28,7 @@ Conda.add("cartopy")
 ```
 
 ## Using the code base
-This code base provides the means to fit arbitrary functions of arbitrary predictors versus a field-to-be-predicted, using the method described in our paper (Section 2.3). The source code and a premade script make this possible. The script `scripts/field_definitions.jl` defines all spatiotemporal fields in a form of a dictionary. The script `scripts/general_model_fit.jl` allows the user to define and run arbitrary models while only changing three lines of code.
+This code base provides the means to fit arbitrary functions of arbitrary predictors versus a field-to-be-predicted, using the method described in our paper. The source code and a premade script make this possible. The script `scripts/field_definitions.jl` defines all spatiotemporal fields in a form of a dictionary. If you want to add more fields, simply modify the dictionary created at the end of the script. Then, the script `scripts/general_model_fit.jl` allows the user to define and run arbitrary models while only changing three lines of code.
 
 **It is crucial that all data are in an equal area grid.** Using CDO, this can be done with the command `cdo remapbil,gea250 -setgridtype,lonlat IN.nc OUT.nc`. It is probably much simpler if you just send me an email asking for the data already mapped into an equal area grid.
 

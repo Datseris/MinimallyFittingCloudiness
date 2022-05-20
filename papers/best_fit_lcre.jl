@@ -1,3 +1,6 @@
+# Due to the hack done in meta-programmically creating the model from
+# strings, one needs to run this script twice for it to work.
+# (I don't know how to fix this bug yet)
 using DrWatson
 @quickactivate "MinimallyFittingCloudiness"
 include(scriptsdir("fields_definitions.jl"));
@@ -21,9 +24,14 @@ function generate_contributions(p, Ps)
     c3 = p[3]*Ps[3]
     return c1, c2, c3
 end
-contribution_titles = ("\$p_1 S\$", "\$p_2 \\Omega\$",  "\$p_3 T\$",)
+contribution_titles = ("\$p_1 \\omega_\\mathrm{std}\$", "\$p_2 \\omega_{500}\$",  "\$p_3 \\mathrm{SST}\$",)
 contrib_cmaps = (:inferno, :BrBG, :inferno, )
 
 # The rest of this will be made on script
 include(papersdir("best_fit_plot.jl"))
-# TODO: Maybe don't fit over ice?
+
+# %% Total longwave CRE
+total_lwCRE = spacemean(timemean(Y), timemean(OCEAN_MASK))
+total_lwCRE_model = spacemean(timemean(M), timemean(OCEAN_MASK))
+
+total_lwCRE, total_lwCRE_model

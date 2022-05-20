@@ -1,3 +1,6 @@
+# Due to the hack done in meta-programmically creating the model from
+# strings, one needs to run this script twice for it to work.
+# (I don't know how to fix this bug yet)
 using DrWatson
 @quickactivate "MinimallyFittingCloudiness"
 include(scriptsdir("fields_definitions.jl"));
@@ -24,8 +27,27 @@ function generate_contributions(p, Ps)
     return c1, c2, c3
 end
 # contribution_titles = ("\$(\\tanh(p_2 \\Omega)+1)/2\$", "\$p_1(\\tanh(p_2 \\Omega)+1)/2\$", "\$p_2 I\$")
-contribution_titles = ("\$50 p_1(\\tanh(p_2\\Omega) + 1)\$", "\$50 p_1(\\tanh(p_3 I) + 1)\$", "\$p_2 \\Omega + p_3 I\$")
+contribution_titles = ("\$50 p_1(\\tanh(p_2\\omega_{500}) + 1)\$", "\$50 p_1(\\tanh(p_3 \\mathrm{CTE}) + 1)\$", "\$p_2 \\omega_{500} + p_3 \\mathrm{CTE}\$")
 contrib_cmaps = (:inferno, :inferno, :BrBG)
 
 # The rest of this will be made on script
 include(papersdir("best_fit_plot.jl"))
+
+# %%
+# Here we simply print the amount of solar energy reflected by clouds,
+# by integrating the product of albedo and insolation. This is a more accurate
+# quantification of the "Shortwave Cloud Radiative Effect", because it has already
+# disentangled surface+cloud interaction as discussed in Datseris & Stevens 2021.
+
+# Notice that after running the `"best_fit_plot.jl"` script,
+# there is the produced global variable `Y` which is just cloud albedo.
+# So we just load the insolation, make sure both are only over ocean,
+# and we just multiply and average.
+I = ncread(EBAF, "solar_mon")
+I = I[Coord(Lat((-MAXDEG)..(MAXDEG)))]
+swCRE = (Y/100) .* I
+total_swCRE = spacemean(timemean(swCRE), timemean(OCEAN_MASK))
+swCRE_model = (M/100) .* I
+total_swCRE_model = spacemean(timemean(swCRE_model), timemean(OCEAN_MASK))
+
+total_swCRE, total_swCRE_model

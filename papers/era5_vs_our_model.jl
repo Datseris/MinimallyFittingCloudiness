@@ -20,11 +20,11 @@ function plot_zonal_comparison!(CERES_tz, ERA5_tz, MODEL_tz, MODEL_tz2=nothing; 
     e1 = nrmse(CERES_tz, ERA5_tz)
     e2 = nrmse(CERES_tz, MODEL_tz)
     ax.plot(Φlats, gnv(CERES_tz); label = "CERES", lw = 3)
-    ax.plot(Φlats, gnv(ERA5_tz);  label = "ERA5, \$e\$=$(rdspl(e1, 3))", ls = "--", alpha, lw = 2.5)
-    ax.plot(Φlats, gnv(MODEL_tz); label = "FIT, \$e\$=$(rdspl(e2, 3))", ls = "-.", alpha, lw = 2.5)
+    ax.plot(Φlats, gnv(ERA5_tz);  label = "ERA5, \$e\$=$(rdspl(e1, 2))", ls = "--", alpha, lw = 2.5)
+    ax.plot(Φlats, gnv(MODEL_tz); label = "FIT, \$e\$=$(rdspl(e2, 2))", ls = "-.", alpha, lw = 2.5)
     if MODEL_tz2 !== nothing
         e3 = nrmse(CERES_tz, MODEL_tz2)
-        ax.plot(Φlats, gnv(MODEL_tz2); label = "FTZ, \$e\$=$(rdspl(e3, 3))",
+        ax.plot(Φlats, gnv(MODEL_tz2); label = "FTZ, \$e\$=$(rdspl(e3, 2))",
         c = "C4", ls = ":", alpha, lw = 2.5)
     end
     ax.set_xticks(sind.(latticks))

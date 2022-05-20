@@ -23,6 +23,18 @@ names_to_symbols = Dict(
     "q700" => "Q",
 )
 
+names_to_symbols = Dict(
+    "Ω_mean" => "\\omega_{500}",
+    "Ω_std" => "\\omega_\\mathrm{std}",
+    "Ω_nf" => "\\omega_\\mathrm{up}",
+    "WS10" => "V_\\mathrm{sfc}",
+    "Tsfc" => "\\mathrm{SST}",
+    "EIS" => "\\mathrm{EIS}",
+    "ECTEI" => "\\mathrm{CTE}",
+    "V" => "q_\\mathrm{tot}",
+    "q700" => "q_{700}",
+)
+
 titlenames = Dict("C"=> "cloud albedo, \$C\$", "L"=>"cloud longwave rad. eff., \$L\$")
 pcm = nothing
 textsize = 22
@@ -47,7 +59,6 @@ function mink(a, k)
 end
 
 error1 = d[error1_name]
-@show maximum(error1)
 error2 = d[error2_name]
 
 toplot = copy(error1)
@@ -66,7 +77,7 @@ end
 ax = subplot2grid((1, 2axwidth + 1), (0, (axi-1)*axwidth); colspan = axwidth)
 x = (1:length(pnames)+1) .- 0.5
 pcm = ax.pcolormesh(x, x, toplot; vmin = 0, vmax = 1, cmap=plt.cm.get_cmap("viridis", 10))
-ax.set_title(titlenames[string(predicted)])
+ax.set_title(titlenames[string(predicted)], fontsize = 24)
 xticks(x[1:end-1] .+ 0.5, pnames; size = textsize)
 if axi == 1
     yticks(x[1:end-1] .+ 0.5, pnames; size = textsize)
@@ -89,5 +100,5 @@ end
 
 axcb = subplot2grid((1, 2axwidth + 1), (0, 2*axwidth))
 colorbar(pcm; label = "error, \$\\epsilon\$", cax = axcb, extend = "max")
-fig.subplots_adjust(wspace = 0.8, left = 0.05, right = 0.9)
+fig.subplots_adjust(wspace = 0.8, left = 0.06, right = 0.9)
 wsave(papersdir("plots", "two_predictors_linear"), fig)

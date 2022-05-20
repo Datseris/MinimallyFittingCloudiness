@@ -1,3 +1,5 @@
+# This script is the PyPlot code that
+# makes the main figures of the paper (Figs 2, 3).
 PyPlot.ioff()
 PROJ = ccrs.Mollweide()
 segment = 20
@@ -157,4 +159,5 @@ fig.subplots_adjust(
 )
 
 wsave(papersdir("plots", "results_$(predicted).pdf"), fig; transparent = false, dpi = 100)
+wsave(papersdir("plots", "results_$(predicted).png"), fig; transparent = false, dpi = 100)
 PyPlot.ion()

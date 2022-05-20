@@ -19,6 +19,7 @@ predictors = (:Ω_mean, :ECTEI)
 
 # ## Field to be predicted
 # Symbol containing the name of the field.
+predicted = :L
 predicted = :C
 
 # ## Model definition
@@ -34,8 +35,11 @@ model_expression = "p[1]*50*(tanh(p[2]*x1 + p[3]*x2) + 1)"
 # * Fit only over ocean
 # * Fit within a range of latitudes only
 # To this end, we define:
-MAXDEG = 70 # fit only within ± MAXDEG
+MAXDEG = 70  # fit only up to MAXDEG
+MINDEG = -70 # fit only down to MINDEG
 ocean_mask_perc = 50 # points with % ≥ than this are considered "ocean"
+
+# User input stops here.
 
 ######################################################################## #src
 # # Model fit code
@@ -51,7 +55,6 @@ close("all") #src
 # Here we use Julia's metaprogramming capabilities to actually instantiate
 # the model function. The code also guarantees that the function definition
 # will be overwritten for the given amount of predictors we have.
-# I am extremely prooud of the way I've set this up.
 # (the details of this are in `src/fitting/general.jl`)
 eval_model_equations(model_expression, predictors)
 
@@ -72,8 +75,8 @@ pu = 1000ones(NP) # upper bounds
 
 # ## Fit full data
 println("\n\n---Starting fit")
-Y = ocean_masked(Φ, OCEAN_MASK, MAXDEG)
-Xs = [ocean_masked(P, OCEAN_MASK, MAXDEG) for P in Ps]
+Y = ocean_masked(Φ, OCEAN_MASK, MAXDEG, MINDEG)
+Xs = [ocean_masked(P, OCEAN_MASK, MAXDEG, MINDEG) for P in Ps]
 @time M, err, p, = perform_fit(model, Y, Xs, p0; lower = pl, upper = pu, show_info=false, n = 2)
 full_fit_error = err
 full_fit_params = p
@@ -83,12 +86,12 @@ println("   Original NRMSE for FULL fit: ", err)
 # println("   Mean-normalized error: ", μrmse(M, Y))
 println("   fit parameters: ", p, '\n')
 timemean_error, mean_correlation, timeseries_errors, timezonal_full_error =
-    plot_total_model_comparison(Φ, Ps, model, p, OCEAN_MASK; MAXDEG)
+    plot_total_model_comparison(Φ, Ps, model, p, OCEAN_MASK; MAXDEG, MINDEG)
 
 
 # ## Fit zonal+time mean data only
-Ftz = maskedtimezonalmean(Φ, OCEAN_MASK, MAXDEG)
-Pstz = map(P -> maskedtimezonalmean(P, OCEAN_MASK, MAXDEG), Ps)
+Ftz = maskedtimezonalmean(Φ, OCEAN_MASK, MAXDEG, MINDEG)
+Pstz = map(P -> maskedtimezonalmean(P, OCEAN_MASK, MAXDEG, MINDEG), Ps)
 w = cosd.(gnv(dims(Ftz, Lat))) # weights
 Mtz, errtz, ptz, = perform_fit(model, Ftz, Pstz, p0;
 lower = pl, upper = pu, n = 100, w)

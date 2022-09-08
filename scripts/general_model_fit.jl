@@ -10,25 +10,27 @@
 using DrWatson
 @quickactivate "MinimallyFittingCloudiness"
 include(scriptsdir("fields_definitions.jl"));
+
 # %% #src
 # ## Predictors
 # Define the predictors as a tuple of `Symbol`s, which can then access
 # the dictionary defined in the file `fields_definition.jl`
-predictors = (:Ω_std, :Ω_mean, :Tsfc)
 predictors = (:Ω_mean, :ECTEI)
+predictors = (:Ω_std, :Ω_mean, :Tsfc)
 
-# ## Field to be predicted
+# ## Field to be predicted``
 # Symbol containing the name of the field.
-predicted = :L
 predicted = :C
+predicted = :L
 
 # ## Model definition
 # Here we express the model's inner code as a String, and later
 # we'll use Julia's metaprogramming to actually make it a runnable function.
 # Predictors are always expressed as `x1, x2, ...`, and the order corresponds
 # to the order of the `predictors` variable.
-model_expression = "p[1]*x1 + p[2]*x2 + p[3]*x3"
 model_expression = "p[1]*50*(tanh(p[2]*x1 + p[3]*x2) + 1)"
+model_expression = "p[1]*x1 + p[2]*x2 + p[3]*x3 + p[4]*x1*x2"
+NP = 4 # allow up to `NP` parameters
 
 # ## Fit constraints
 # We want to do two limitations:
@@ -36,10 +38,11 @@ model_expression = "p[1]*50*(tanh(p[2]*x1 + p[3]*x2) + 1)"
 # * Fit within a range of latitudes only
 # To this end, we define:
 MAXDEG = 70  # fit only up to MAXDEG
-MINDEG = -70 # fit only down to MINDEG
+MINDEG = -MAXDEG # fit only down to MINDEG
 ocean_mask_perc = 50 # points with % ≥ than this are considered "ocean"
 
 # User input stops here.
+# ---
 
 ######################################################################## #src
 # # Model fit code
@@ -48,7 +51,7 @@ ocean_mask_perc = 50 # points with % ≥ than this are considered "ocean"
 Ps = map(p -> getindex(field_dictionary, p), predictors)
 OCEAN_MASK = field_dictionary[:O] .≥ ocean_mask_perc
 include(srcdir("fitting", "general.jl"))
-include(srcdir("fitting", "masking.jl"))
+include(srcdir("masking.jl"))
 
 close("all") #src
 
@@ -68,7 +71,6 @@ plot_zonal_averages([oceany_zonalmean(X, OCEAN_MASK) for X in (Φ, Ps...)])
 # We obtain the necessary parameters from the fit and always then generate a
 # **full** spatiotemporal field that is the model fit, by using the
 # spatiotemporal fields of the predictors.
-NP = 4 # allow up to `NP` parameters
 p0 = ones(NP) # initial parameters don't matter, 10 random seeds are taken
 pl = -1000ones(NP) # lower bounds
 pu = 1000ones(NP) # upper bounds

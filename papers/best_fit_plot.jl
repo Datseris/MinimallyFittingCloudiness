@@ -1,5 +1,6 @@
 # This script is the PyPlot code that
 # makes the main figures of the paper (Figs 2, 3).
+# It relies on having already defined, at global scope, the necessary variables.
 PyPlot.ioff()
 PROJ = ccrs.Mollweide()
 segment = 20
@@ -18,23 +19,24 @@ function add_colorbar!(ax_cbar, cmap, lvls = nothing; set_ticks = true)
 end
 
 fig = figure(figsize = (18, 14))
+geoaxis_kw = (projection=PROJ, facecolor="0.75")
 # Segment 1: maps of ceres, model, diff
-axY = subplot2grid((3segment + 2segment_gap, 3), (0, 0), rowspan=segment-1, projection=PROJ)
-axM = subplot2grid((3segment + 2segment_gap, 3), (0, 1), rowspan=segment-1, projection=PROJ)
-axD = subplot2grid((3segment + 2segment_gap, 3), (0, 2), rowspan=segment-1, projection=PROJ)
-ax_cbar = subplot2grid((3segment + 2segment_gap, 3), (segment-1, 0), colspan=2)
+axY = subplot2grid((3segment + 2segment_gap, 3), (0, 0); rowspan=segment-1, geoaxis_kw...)
+axM = subplot2grid((3segment + 2segment_gap, 3), (0, 1); rowspan=segment-1, geoaxis_kw...)
+axD = subplot2grid((3segment + 2segment_gap, 3), (0, 2); rowspan=segment-1,geoaxis_kw...)
+ax_cbar = subplot2grid((3segment + 2segment_gap, 3), (segment-1, 0); colspan=2)
 ax_cbar_diff = subplot2grid((3segment + 2segment_gap, 3), (segment-1, 2))
 # Segment 2: maps of contributions
-axc1 = subplot2grid((3segment + 2segment_gap, 3), (segment+segment_gap, 0), rowspan=segment-1, projection=PROJ)
+axc1 = subplot2grid((3segment + 2segment_gap, 3), (segment+segment_gap, 0); rowspan=segment-1, geoaxis_kw...)
 axc1_cbar = subplot2grid((3segment + 2segment_gap, 3), (2segment + segment_gap-1, 0))
-axc2 = subplot2grid((3segment + 2segment_gap, 3), (segment+segment_gap, 1), rowspan=segment-1, projection=PROJ)
+axc2 = subplot2grid((3segment + 2segment_gap, 3), (segment+segment_gap, 1); rowspan=segment-1, geoaxis_kw...)
 axc2_cbar = subplot2grid((3segment + 2segment_gap, 3), (2segment + segment_gap-1, 1))
-axc3 = subplot2grid((3segment + 2segment_gap, 3), (segment+segment_gap, 2), rowspan=segment-1, projection=PROJ)
+axc3 = subplot2grid((3segment + 2segment_gap, 3), (segment+segment_gap, 2); rowspan=segment-1, geoaxis_kw...)
 axc3_cbar = subplot2grid((3segment + 2segment_gap, 3), (2segment + segment_gap-1, 2))
 # Segment 3: time variability
-ax_tropics = subplot2grid((3segment + 2segment_gap, 3), (2segment + 2segment_gap, 0), rowspan=segment)
-ax_extra = subplot2grid((3segment + 2segment_gap, 3), (2segment + 2segment_gap, 1), rowspan=segment)
-axcorr = subplot2grid((3segment + 2segment_gap, 3), (2segment +2segment_gap, 2), rowspan=segment-1, projection=PROJ)
+ax_tropics = subplot2grid((3segment + 2segment_gap, 3), (2segment + 2segment_gap, 0); rowspan=segment)
+ax_extra = subplot2grid((3segment + 2segment_gap, 3), (2segment + 2segment_gap, 1); rowspan=segment)
+axcorr = subplot2grid((3segment + 2segment_gap, 3), (2segment +2segment_gap, 2); rowspan=segment-1, geoaxis_kw...)
 axcorr_cbar = subplot2grid((3segment + 2segment_gap, 3), (3segment + 2segment_gap -1, 2))
 
 OCEAN_MASK = (field_dictionary[:O] .> ocean_mask_perc)[Coord(Lat((-MAXDEG)..(MAXDEG)))]
@@ -47,7 +49,7 @@ latticks = [-70, -30, -0, 30, 70]
 levels = 21
 vmin, vmax = limits
 lvls = range(vmin, vmax; length = levels)
-cmap = matplotlib.cm.get_cmap(:viridis, length(lvls)-1)
+cmap = matplotlib.cm.get_cmap(:Blues_r, length(lvls)-1)
 
 Ymap = timemean(Y, OCEAN_MASK)
 Mmap = timemean(M, OCEAN_MASK)
@@ -56,7 +58,7 @@ lon = [l[1] for l in coords]
 lat = [l[2] for l in coords]
 
 sckwargs = (
-    transform = LONLAT, cmap, vmin, vmax, s = 7,
+    transform = LONLAT, cmap, vmin, vmax, s = 8,
 )
 axY.scatter(lon, lat; c = gnv(Ymap), sckwargs...)
 axY.set_title(Φname*", CERES", size = title_size)
@@ -107,10 +109,13 @@ cmap = matplotlib.cm.get_cmap(:RdBu, levels-1)
 add_colorbar!(axcorr_cbar, cmap, range(-1, 1; length = levels); set_ticks = true)
 
 # Seasonal timeseries
+seasonal_offsets = []
+
 for j in 1:length(latzones)-1
 
     ax = j ∈ (1, 4) ? ax_extra : ax_tropics
-    ax.set_title(j ∈ (1, 4) ? "extratropics" : "tropics"; size = title_size)
+    axis_title = j ∈ (1, 4) ? "extratropics" : "tropics"
+    ax.set_title(axis_title; size = title_size)
     cna = isodd(j) ? 0 : 2 # color n add
 
     l1, l2 = latzones[j], latzones[j+1]
@@ -124,6 +129,9 @@ for j in 1:length(latzones)-1
         label = (n == 2 ? "MODEL" : "CERES") * " " * (j < 3 ? "SH" : "NH")
         dates, vals = seasonality(out)
         m = mean.(vals)
+        # Record seasonal offset for listing in table later
+        push!(seasonal_offsets, (label*" $(axis_title)", mean(m)))
+
         m = m .- mean(m)
         isodd(j) && (m .+= seasonal_offset)
         push!(m, m[1])

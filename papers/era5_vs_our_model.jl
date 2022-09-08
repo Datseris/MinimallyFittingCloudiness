@@ -5,7 +5,7 @@
 using DrWatson
 @quickactivate "MinimallyFittingCloudiness"
 include(scriptsdir("fields_definitions.jl"));
-include(srcdir("fitting", "masking.jl"))
+include(srcdir("masking.jl"))
 include(srcdir("fitting", "general.jl"))
 include(srcdir("cloudiness.jl"))
 MAXDEG = 80 # fit only within ± MAXDEG
@@ -28,7 +28,7 @@ function plot_zonal_comparison!(CERES_tz, ERA5_tz, MODEL_tz, MODEL_tz2=nothing; 
         c = "C4", ls = ":", alpha, lw = 2.5)
     end
     ax.set_xticks(sind.(latticks))
-    ax.set_xticklabels(string.(latticks) .* "ᵒ")
+    ax.set_xticklabels(string.(latticks) .* "\$\\!^\\circ\$")
 end
 
 function compare_field_maps(CERES_FIELDS, ERA5_FIELDS)
@@ -80,49 +80,6 @@ end
 
 mainfig = figure(figsize = (14, 5))
 
-# %% #src
-# # Comparison of L
-# First, compute L from ERA5
-L_CERES_tz = maskedtimezonalmean(L, OCEAN_MASK, MAXDEG)
-
-# Compute L from ERA5:
-Lall_ERA5 = -ncread(ERA5_2D, "ttr")/86400 # transfrom to W/m²; divide by seconds in day
-Lclr_ERA5 = -ncread(ERA5_2D, "ttrc")/86400
-L_ERA5 =   Lclr_ERA5 .- Lall_ERA5
-CERES_FIELDS = (Lall, Lclr, L)
-ERA5_FIELDS = (Lall_ERA5, Lclr_ERA5, L_ERA5)
-
-# Alright, plot the comparison of all fields now
-## compare_field_maps(CERES_FIELDS, ERA5_FIELDS)
-
-# Next, calculate our model fit, in two ways:
-# 1. On full data (as always)
-# 2. On zonally+temporally averaged data (just to make case that this does not matter much)
-
-predictors = (:Ω_std, :Ω_mean, :Tsfc)
-model_expression = "p[1]*x1 + p[2]*x2 +p[3]*x3"
-eval_model_equations(model_expression, predictors)
-
-# (1):
-Ps = map(p -> getindex(field_dictionary, p), predictors)
-Ymasked = ocean_masked(field_dictionary[:L], OCEAN_MASK, MAXDEG)
-Psmasked = [ocean_masked(P, OCEAN_MASK, MAXDEG) for P in Ps]
-Mmasked, err, p, = perform_fit(model, Ymasked, Psmasked, ones(3); n = 2)
-M1 = maskedtimezonalmean(model(p, Ps...), OCEAN_MASK, MAXDEG)
-
-# (2):
-Ytz = maskedtimezonalmean(L, OCEAN_MASK, MAXDEG)
-Pstz = map(P -> maskedtimezonalmean(P, OCEAN_MASK, MAXDEG), Ps)
-Mtz, = perform_fit(model, Ytz, Pstz, ones(3); n = 2)
-
-# And finally, get ERA5
-L_ERA5_tz = maskedtimezonalmean(L_ERA5, OCEAN_MASK, MAXDEG)
-
-# and plot everything:
-axL = mainfig.add_subplot(121)
-plot_zonal_comparison!(Ytz, L_ERA5_tz, M1, Mtz; ax = axL)
-
-
 # # Comparison of C
 # %% src
 # We can't compute the energetically consistent effective cloud albedo of Datseris &
@@ -163,7 +120,7 @@ end
 # And then, plot spatial maps of all fields just to be sure everything makes sense
 CERES_FIELDS = (CERES_FIELDS..., α_CERES)
 ERA5_FIELDS = (ERA5_FIELDS..., α_ERA5)
-## compare_field_maps(CERES_FIELDS, ERA5_FIELDS)
+# compare_field_maps(CERES_FIELDS, ERA5_FIELDS)
 
 # ## Fit and comparison
 # We can now do the full fit. Similarly with the L case, we will fit (1) over full space
@@ -195,7 +152,51 @@ Mtz, = perform_fit(model, Ytz, Pstz, ones(3); n = 50, w)
 axC = mainfig.add_subplot(122)
 plot_zonal_comparison!(Ytz, α_ERA5_tz, M1, Mtz; ax = axC)
 
-# Final adjustments before saving
+
+# # Comparison of L
+# %% #src
+# First, compute L from ERA5
+L_CERES_tz = maskedtimezonalmean(L, OCEAN_MASK, MAXDEG)
+
+# Compute L from ERA5:
+Lall_ERA5 = -ncread(ERA5_2D, "ttr")/86400 # transfrom to W/m²; divide by seconds in day
+Lclr_ERA5 = -ncread(ERA5_2D, "ttrc")/86400
+L_ERA5 =   Lclr_ERA5 .- Lall_ERA5
+CERES_FIELDS = (Lall, Lclr, L)
+ERA5_FIELDS = (Lall_ERA5, Lclr_ERA5, L_ERA5)
+
+# Alright, plot the comparison of all fields now
+# compare_field_maps(CERES_FIELDS, ERA5_FIELDS)
+
+# Next, calculate our model fit, in two ways:
+# 1. On full data (as always)
+# 2. On zonally+temporally averaged data (just to make case that this does not matter much)
+
+predictors = (:Ω_std, :Ω_mean, :Tsfc)
+model_expression = "p[1]*x1 + p[2]*x2 +p[3]*x3"
+eval_model_equations(model_expression, predictors)
+
+# (1):
+Ps = map(p -> getindex(field_dictionary, p), predictors)
+Ymasked = ocean_masked(field_dictionary[:L], OCEAN_MASK, MAXDEG)
+Psmasked = [ocean_masked(P, OCEAN_MASK, MAXDEG) for P in Ps]
+Mmasked, err, p, = perform_fit(model, Ymasked, Psmasked, ones(3); n = 2)
+M1 = maskedtimezonalmean(model(p, Ps...), OCEAN_MASK, MAXDEG)
+
+# (2):
+Ytz = maskedtimezonalmean(L, OCEAN_MASK, MAXDEG)
+Pstz = map(P -> maskedtimezonalmean(P, OCEAN_MASK, MAXDEG), Ps)
+Mtz, = perform_fit(model, Ytz, Pstz, ones(3); n = 2)
+
+# And finally, get ERA5
+L_ERA5_tz = maskedtimezonalmean(L_ERA5, OCEAN_MASK, MAXDEG)
+
+# and plot everything:
+axL = mainfig.add_subplot(121)
+plot_zonal_comparison!(Ytz, L_ERA5_tz, M1, Mtz; ax = axL)
+
+
+# ## Final adjustments before saving
 # %% #src
 
 mainfig.tight_layout()

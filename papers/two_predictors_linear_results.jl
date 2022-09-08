@@ -30,7 +30,7 @@ names_to_symbols = Dict(
     "WS10" => "V_\\mathrm{sfc}",
     "Tsfc" => "\\mathrm{SST}",
     "EIS" => "\\mathrm{EIS}",
-    "ECTEI" => "\\mathrm{CTE}",
+    "ECTEI" => "\\mathrm{ECT}",
     "V" => "q_\\mathrm{tot}",
     "q700" => "q_{700}",
 )
@@ -87,7 +87,7 @@ end
 
 for i in 1:k
     # Becuse puthon arrays are plotted as transposed, i need to reverse the
-    # opposite indices... # TODO: Switch to makie.
+    # opposite indices...
     highlight_cell(reverse(min1[i].I); color = :red)
     highlight_cell(min2[i].I; color = :red)
 end

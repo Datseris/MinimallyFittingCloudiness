@@ -1,22 +1,27 @@
 import LsqFit
 # The tolerance related keywords for LsqFit can be found here:
 # https://github.com/JuliaNLSolvers/LsqFit.jl/blob/master/src/levenberg_marquardt.jl#L16-L28
-
+include("fit_errors.jl")
 ##########################################################################################
 # Model generation
 ##########################################################################################
-eval_model_equations(model_expression, p) = eval_model_equations(model_expression, length(p))
+eval_model_equations(model_expression, predictors) =
+    eval_model_equations(model_expression, length(predictors))
 
-function eval_model_equations(model_expression, N::Int)
+function eval_model_equations(model_expression, predictor_amount::Int)
     parsed_expression = Meta.parse(model_expression)
-    _vars_expand = [Symbol("x", "$i") for i in 1:N]
-    eval(:(model(p, $(_vars_expand...), args...) = @. $(parsed_expression)))
+    _vars_expand = [Symbol("x", "$i") for i in 1:predictor_amount]
+    Core.eval(Main, :(model(p, $(_vars_expand...), args...) = @. $(parsed_expression)))
 end
 
-function get_model_instance(expression, Ps, p)
+function get_model_instance(expression::String, Ps, p)
     eval_model_equations(expression, length(Ps))
     yield() # If I don't do this, I run into world-age problems
     return model(p, Ps...)
+end
+
+function get_model_instance(expression::Function, Ps, p)
+    return expression(p, Ps...)
 end
 
 function multimodel(x::Matrix, p, model)
@@ -28,7 +33,7 @@ function multimodel(x::Vector{<:AbstractArray}, p, model)
 end
 
 ##########################################################################################
-# Actual fitting
+# Fitting
 ##########################################################################################
 """
     perform_fit(model, F, Xs, p0; kwargs...) → M, e, p
@@ -41,8 +46,8 @@ The fit is the best ouf of `n` different and random initial parameter configurat
 within the space allowed by `lower` and `upper`.
 """
 function perform_fit(model, c, xs, p0;
-        lower = fill(-10_000.0, length(p0)),
-        upper = fill(10_000.0,  length(p0)),
+        lower = fill(-1_000.0, length(p0)),
+        upper = fill(1_000.0,  length(p0)),
         n = 10, show_info = false, w = nothing,
     )
     fitter = (x, p) -> multimodel(x, p, model)

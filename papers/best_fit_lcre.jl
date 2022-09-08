@@ -1,16 +1,13 @@
-# Due to the hack done in meta-programmically creating the model from
-# strings, one needs to run this script twice for it to work.
-# (I don't know how to fix this bug yet)
 using DrWatson
 @quickactivate "MinimallyFittingCloudiness"
 include(scriptsdir("fields_definitions.jl"));
-include(srcdir("fitting", "masking.jl"))
+include(srcdir("masking.jl"))
 include(srcdir("fitting", "general.jl"))
 
 predictors = (:Ω_std, :Ω_mean, :Tsfc)
 predicted = :L
 Φname = "\$L\$"
-expression = "p[1]*x1 + p[2]*x2 + p[3]*x3"
+expression = ((p, x1, x2, x3) -> @. p[1]*x1 + p[2]*x2 + p[3]*x3)
 params = [42.67918994446545, 208.88564817976484, 0.06557681258808708]
 MAXDEG = 70 # fit only within ± MAXDEG
 ocean_mask_perc = 50 # points with % ≥ than this are considered "ocean"
@@ -27,8 +24,11 @@ end
 contribution_titles = ("\$p_1 \\omega_\\mathrm{std}\$", "\$p_2 \\omega_{500}\$",  "\$p_3 \\mathrm{SST}\$",)
 contrib_cmaps = (:inferno, :BrBG, :inferno, )
 
-# The rest of this will be made on script
+# The rest of this will be made with the script
 include(papersdir("best_fit_plot.jl"))
+
+# These are the actual means of the seasonal timeseries
+seasonal_offsets_lcre = seasonal_offsets
 
 # %% Total longwave CRE
 total_lwCRE = spacemean(timemean(Y), timemean(OCEAN_MASK))

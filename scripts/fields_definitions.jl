@@ -38,7 +38,7 @@ ICE = ncread(SYN1deg, "aux_snow_mon"; name = "ice_fraction")
 LAND = ClimArray(100 .- O .- ICE; name = "land_fraction")
 
 # Predictors based on wind speed
-Ω_mean = ClimArray(-ncread(ERA5_Ω, "W_mean"); name = "Ω_mean") # notice -1000 !
+Ω_mean = ClimArray(-ncread(ERA5_Ω, "W_mean"); name = "Ω_mean") # notice -
 Ω_std = ncread(ERA5_Ω, "W_std"; name = "Ω_std")
 Ω_nf = ncread(ERA5_Ω, "W_nf"; name = "Ω_nf")
 WS10 = ncread(ERA5_2D, "si10"; name = "wind10")

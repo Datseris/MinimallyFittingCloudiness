@@ -112,11 +112,12 @@ function plot_spacedependent_comparison(X, Y, OCEAN_MASK, pfit)
 end
 
 using PyCall, Statistics
-seaborn = pyimport("seaborn")
 
 function plot_scatter_pdf(ω, c; color = "C0", xlabel = "x", ylabel="y")
     # axs[1, i].hist(Array(c); bins = 20)
     # axs[2, i].hist(Array(ω); bins = 20)
+    seaborn = pyimport("seaborn")
+
     ret = seaborn.jointplot(; y = Array(c), x = Array(ω),
         height=10, ratio=3, kind = "hist",
         # color, alpha = 0.1,

@@ -149,7 +149,7 @@ Mtz, = perform_fit(model, Ytz, Pstz, ones(3); n = 50, w)
 α_ERA5_tz = maskedzonalmean(α_ERA5, OCEAN_MASK, MAXDEG)
 
 # and plot everything:
-axC = mainfig.add_subplot(122)
+axC = mainfig.add_subplot(121)
 plot_zonal_comparison!(Ytz, α_ERA5_tz, M1, Mtz; ax = axC)
 
 
@@ -192,7 +192,7 @@ Mtz, = perform_fit(model, Ytz, Pstz, ones(3); n = 2)
 L_ERA5_tz = maskedtimezonalmean(L_ERA5, OCEAN_MASK, MAXDEG)
 
 # and plot everything:
-axL = mainfig.add_subplot(121)
+axL = mainfig.add_subplot(122)
 plot_zonal_comparison!(Ytz, L_ERA5_tz, M1, Mtz; ax = axL)
 
 
